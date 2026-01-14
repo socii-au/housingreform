@@ -1,0 +1,20 @@
+0 verbose cli /opt/homebrew/Cellar/node/25.2.1/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.6.2
+2 info using node@v25.2.1
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 warn Unknown env config "tmp". This will stop working in the next major version of npm.
+5 silly config load:file:/Volumes/HUGE/COMRADEBENJ/APPS/housingreform/.npmrc
+6 silly config load:file:/Volumes/HUGE/COMRADEBENJ/APPS/housingreform/.home/.npmrc
+7 silly config load:file:/opt/homebrew/etc/npmrc
+8 verbose title npm install
+9 verbose argv "install" "--no-fund" "--no-audit"
+10 verbose logfile logs-max:10 dir:/Volumes/HUGE/COMRADEBENJ/APPS/housingreform/.npm-cache/_logs/2026-01-13T15_26_16_228Z-
+11 verbose logfile /Volumes/HUGE/COMRADEBENJ/APPS/housingreform/.npm-cache/_logs/2026-01-13T15_26_16_228Z-debug-0.log
+12 silly logfile done cleaning log files
+13 verbose cwd /Volumes/HUGE/COMRADEBENJ/APPS/housingreform
+14 verbose os Darwin 25.2.0
+15 verbose node v25.2.1
+16 verbose npm  v11.6.2
+17 verbose exit 1
+18 verbose code 1
+19 error A complete log of this run can be found in: /Volumes/HUGE/COMRADEBENJ/APPS/housingreform/.npm-cache/_logs/2026-01-13T15_26_16_228Z-debug-0.log
