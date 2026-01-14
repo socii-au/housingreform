@@ -19,11 +19,180 @@ import {
 } from "./presets";
 import { clampPolicyV2, toPolicyV2 } from "./policyRegistry";
 
+/**
+ * Merge multiple presets by stacking their effects.
+ * Starts with baseline, then applies each preset's changes on top.
+ * For numeric values, uses additive stacking (e.g., supply boosts add together).
+ * For boolean/enum values, uses the last non-default value.
+ */
+function mergePresets(presetIds: string[]): PolicyLeversV2 {
+  if (presetIds.length === 0) {
+    return DEFAULT_POLICY_LEVERS;
+  }
+
+  // Filter out baseline - it's the base, not something to merge
+  const nonBaselinePresets = presetIds.filter((id) => id !== "baseline");
+  
+  // Start with baseline
+  let merged = { ...DEFAULT_POLICY_LEVERS };
+  let maxYears = 20;
+
+  for (const presetId of nonBaselinePresets) {
+    const preset = SCENARIO_PRESETS.find((p) => p.id === presetId);
+    if (!preset) continue;
+
+    const presetPolicy = toPolicyV2(preset.policy);
+
+    // Merge numeric values additively (for things like supply boost, demand reduction)
+    merged.supplyBoost = Math.min(1, merged.supplyBoost + presetPolicy.supplyBoost);
+    merged.demandReduction = Math.min(1, merged.demandReduction + presetPolicy.demandReduction);
+
+    // Merge negative gearing (take the most restrictive)
+    if (presetPolicy.negativeGearingMode !== "none") {
+      merged.negativeGearingMode = presetPolicy.negativeGearingMode;
+      merged.negativeGearingIntensity = Math.max(
+        merged.negativeGearingIntensity,
+        presetPolicy.negativeGearingIntensity
+      );
+    }
+
+    // Merge ownership cap (take the most restrictive)
+    if (presetPolicy.ownershipCapEnabled) {
+      merged.ownershipCapEnabled = true;
+      merged.ownershipCapEnforcement = Math.max(
+        merged.ownershipCapEnforcement,
+        presetPolicy.ownershipCapEnforcement
+      );
+      merged.excessInvestorStockShare = Math.max(
+        merged.excessInvestorStockShare,
+        presetPolicy.excessInvestorStockShare
+      );
+      merged.divestmentPhased = presetPolicy.divestmentPhased || merged.divestmentPhased;
+    }
+
+    // Merge ramp years (take the longest)
+    merged.rampYears = Math.max(merged.rampYears, presetPolicy.rampYears);
+
+    // Merge advanced policy levers (additive for most, max for others)
+    if (presetPolicy.taxInvestor) {
+      merged.taxInvestor = {
+        ...merged.taxInvestor,
+        cgtDiscountDelta: merged.taxInvestor.cgtDiscountDelta + presetPolicy.taxInvestor.cgtDiscountDelta,
+        landTaxShift: Math.max(merged.taxInvestor.landTaxShift, presetPolicy.taxInvestor.landTaxShift),
+        vacancyTaxIntensity: Math.max(
+          merged.taxInvestor.vacancyTaxIntensity,
+          presetPolicy.taxInvestor.vacancyTaxIntensity
+        ),
+        shortStayRegulationIntensity: Math.max(
+          merged.taxInvestor.shortStayRegulationIntensity,
+          presetPolicy.taxInvestor.shortStayRegulationIntensity
+        ),
+        foreignBuyerRestrictionIntensity: Math.max(
+          merged.taxInvestor.foreignBuyerRestrictionIntensity,
+          presetPolicy.taxInvestor.foreignBuyerRestrictionIntensity
+        ),
+      };
+    }
+
+    if (presetPolicy.credit) {
+      merged.credit = {
+        ...merged.credit,
+        serviceabilityBufferDelta: Math.max(
+          merged.credit.serviceabilityBufferDelta,
+          presetPolicy.credit.serviceabilityBufferDelta
+        ),
+        dtiCapTightness: Math.max(merged.credit.dtiCapTightness, presetPolicy.credit.dtiCapTightness),
+        investorLendingLimitTightness: Math.max(
+          merged.credit.investorLendingLimitTightness,
+          presetPolicy.credit.investorLendingLimitTightness
+        ),
+      };
+    }
+
+    if (presetPolicy.subsidies) {
+      merged.subsidies = {
+        ...merged.subsidies,
+        firstHomeBuyerSubsidyIntensity: Math.max(
+          merged.subsidies.firstHomeBuyerSubsidyIntensity,
+          presetPolicy.subsidies.firstHomeBuyerSubsidyIntensity
+        ),
+      };
+    }
+
+    if (presetPolicy.rental) {
+      merged.rental = {
+        ...merged.rental,
+        rentAssistanceIntensity: Math.max(
+          merged.rental.rentAssistanceIntensity,
+          presetPolicy.rental.rentAssistanceIntensity
+        ),
+        rentRegulationCap:
+          presetPolicy.rental.rentRegulationCap != null
+            ? presetPolicy.rental.rentRegulationCap
+            : merged.rental.rentRegulationCap,
+        rentRegulationCoverage: Math.max(
+          merged.rental.rentRegulationCoverage,
+          presetPolicy.rental.rentRegulationCoverage
+        ),
+        vacancyDecontrol: presetPolicy.rental.vacancyDecontrol || merged.rental.vacancyDecontrol,
+      };
+    }
+
+    if (presetPolicy.planning) {
+      merged.planning = {
+        ...merged.planning,
+        upzoningIntensity: Math.max(merged.planning.upzoningIntensity, presetPolicy.planning.upzoningIntensity),
+        infrastructureEnablement: Math.max(
+          merged.planning.infrastructureEnablement,
+          presetPolicy.planning.infrastructureEnablement
+        ),
+        infrastructureLagYears: Math.min(
+          merged.planning.infrastructureLagYears,
+          presetPolicy.planning.infrastructureLagYears
+        ),
+      };
+    }
+
+    if (presetPolicy.publicCommunity) {
+      merged.publicCommunity = {
+        ...merged.publicCommunity,
+        publicHousingBuildBoost: Math.max(
+          merged.publicCommunity.publicHousingBuildBoost,
+          presetPolicy.publicCommunity.publicHousingBuildBoost
+        ),
+        publicHousingAcquisitionSharePerYear: Math.max(
+          merged.publicCommunity.publicHousingAcquisitionSharePerYear,
+          presetPolicy.publicCommunity.publicHousingAcquisitionSharePerYear
+        ),
+        conversionToSocialSharePerYear: Math.max(
+          merged.publicCommunity.conversionToSocialSharePerYear,
+          presetPolicy.publicCommunity.conversionToSocialSharePerYear
+        ),
+      };
+    }
+
+    if (presetPolicy.migration) {
+      merged.migration = {
+        ...merged.migration,
+        netOverseasMigrationShock: merged.migration.netOverseasMigrationShock + presetPolicy.migration.netOverseasMigrationShock,
+      };
+    }
+
+    // Take the longest years if specified
+    if (preset.years) {
+      maxYears = Math.max(maxYears, preset.years);
+    }
+  }
+
+  return clampPolicyV2(merged);
+}
+
 type ModelState = {
   years: number;
   policy: PolicyLeversV2;
   scope: Scope;
-  presetId: string;
+  presetId: string; // Keep for backward compatibility
+  selectedPresets: string[]; // Array of selected preset IDs for multi-select
   includeAllCities: boolean;
   engine: ScenarioParams["engine"];
   showHistory: boolean;
@@ -37,6 +206,7 @@ type Action =
   | { type: "setPolicy"; policy: PolicyLeversV2 }
   | { type: "setScope"; scope: Scope }
   | { type: "applyPreset"; presetId: string }
+  | { type: "togglePreset"; presetId: string } // New: toggle a preset on/off
   | { type: "toggleCityCoverage"; includeAll: boolean }
   | { type: "setEngine"; engine: ScenarioParams["engine"] }
   | { type: "setShowHistory"; showHistory: boolean }
@@ -49,6 +219,7 @@ const initialState: ModelState = {
   policy: DEFAULT_POLICY_LEVERS,
   scope: { level: "national" },
   presetId: "baseline",
+  selectedPresets: ["baseline"], // Start with baseline selected
   includeAllCities: true,
   engine: "aggregate",
   showHistory: false,
@@ -59,18 +230,25 @@ const initialState: ModelState = {
 function reducer(state: ModelState, action: Action): ModelState {
   switch (action.type) {
     case "setYears":
-      return { ...state, years: action.years, presetId: "custom" };
+      return { ...state, years: action.years, presetId: "custom", selectedPresets: [] };
     case "patchPolicy":
       return {
         ...state,
         policy: clampPolicyV2({ ...toPolicyV2(state.policy), ...action.patch }),
         presetId: "custom",
+        selectedPresets: [], // Clear presets when manually editing
       };
     case "setPolicy":
-      return { ...state, policy: clampPolicyV2(action.policy), presetId: "custom" };
+      return {
+        ...state,
+        policy: clampPolicyV2(action.policy),
+        presetId: "custom",
+        selectedPresets: [], // Clear presets when manually setting
+      };
     case "setScope":
       return { ...state, scope: action.scope };
     case "applyPreset": {
+      // Legacy single-preset selection (for backward compatibility)
       const preset = SCENARIO_PRESETS.find((p) => p.id === action.presetId);
       if (!preset) return state;
       return {
@@ -78,12 +256,53 @@ function reducer(state: ModelState, action: Action): ModelState {
         policy: clampPolicyV2(preset.policy),
         years: preset.years ?? state.years,
         presetId: action.presetId,
+        selectedPresets: [action.presetId],
+      };
+    }
+    case "togglePreset": {
+      // Toggle a preset on/off in multi-select mode
+      const isSelected = state.selectedPresets.includes(action.presetId);
+      let newSelectedPresets: string[];
+
+      if (isSelected) {
+        // Remove it
+        newSelectedPresets = state.selectedPresets.filter((id) => id !== action.presetId);
+        // Ensure at least baseline is selected
+        if (newSelectedPresets.length === 0) {
+          newSelectedPresets = ["baseline"];
+        }
+      } else {
+        // Add it (but remove baseline if adding a non-baseline preset)
+        if (action.presetId === "baseline") {
+          newSelectedPresets = ["baseline"];
+        } else {
+          newSelectedPresets = [...state.selectedPresets.filter((id) => id !== "baseline"), action.presetId];
+        }
+      }
+
+      // Merge all selected presets
+      const mergedPolicy = mergePresets(newSelectedPresets);
+      
+      // Get max years from selected presets
+      const maxYears = Math.max(
+        ...newSelectedPresets.map((id) => {
+          const p = SCENARIO_PRESETS.find((preset) => preset.id === id);
+          return p?.years ?? 20;
+        })
+      );
+
+      return {
+        ...state,
+        selectedPresets: newSelectedPresets,
+        policy: mergedPolicy,
+        years: maxYears,
+        presetId: newSelectedPresets.length === 1 ? newSelectedPresets[0] : "custom",
       };
     }
     case "toggleCityCoverage":
       return { ...state, includeAllCities: action.includeAll };
     case "setEngine":
-      return { ...state, engine: action.engine, presetId: "custom" };
+      return { ...state, engine: action.engine, presetId: "custom", selectedPresets: [] };
     case "setShowHistory":
       return { ...state, showHistory: action.showHistory };
     case "setHistoryIndexBase":
@@ -103,6 +322,7 @@ type ModelContextValue = {
   scope: Scope;
   scopedView: RegionScenarioOutputs;
   presetId: string;
+  selectedPresets: string[]; // Array of selected preset IDs
   includeAllCities: boolean;
   engine: ScenarioParams["engine"];
   calibrationReport: CalibrationReport | null;
@@ -122,6 +342,7 @@ type ModelContextValue = {
   selectState: (state: StateId) => void;
   selectCity: (city: CityId) => void;
   applyPreset: (presetId: string) => void;
+  togglePreset: (presetId: string) => void; // Toggle a preset on/off
   toggleCityCoverage: (includeAll: boolean) => void;
   setEngine: (engine: ScenarioParams["engine"]) => void;
   setShowHistory: (show: boolean) => void;
@@ -204,6 +425,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       scope: state.scope,
       scopedView,
       presetId: state.presetId,
+      selectedPresets: state.selectedPresets,
       includeAllCities: state.includeAllCities,
       engine: state.engine,
       calibrationReport,
@@ -219,6 +441,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       selectState: (st) => dispatch({ type: "setScope", scope: { level: "state", state: st } }),
       selectCity: (city) => dispatch({ type: "setScope", scope: { level: "city", city } }),
       applyPreset: (presetId) => dispatch({ type: "applyPreset", presetId }),
+      togglePreset: (presetId) => dispatch({ type: "togglePreset", presetId }),
       toggleCityCoverage: (includeAll) => dispatch({ type: "toggleCityCoverage", includeAll }),
       setEngine: (engine) => dispatch({ type: "setEngine", engine }),
       setShowHistory: (show) => dispatch({ type: "setShowHistory", showHistory: show }),
@@ -232,6 +455,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       state.scope,
       scopedView,
       state.presetId,
+      state.selectedPresets,
       state.includeAllCities,
       selectedCityData,
       state.engine,

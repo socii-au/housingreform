@@ -5,6 +5,7 @@ import { PolicyChannelsFlow } from "../components/InvestorFlow";
 import { SummaryCounter } from "../components/PublicHousingCounter";
 import { useModel, scopeLabel } from "../model/ModelContext";
 import { HelpExpander, LimitationsBox } from "../components/shared/HelpText";
+import type { TimelinePoint } from "../model/history/types";
 
 function fmtAUD(n: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -128,8 +129,17 @@ export function GuidedStory() {
   const { scope, scopedView, outputs, params } = useModel();
 
   const { years, summary } = scopedView;
-  const first = years[0];
-  const last = years[years.length - 1];
+  // Convert RegionYearState[] to TimelinePoint[] for charts
+  const timelinePoints: TimelinePoint[] = years.map((y) => ({
+    ...y,
+    kind: "projected" as const,
+  }));
+  const first = timelinePoints[0];
+  const last = timelinePoints[timelinePoints.length - 1];
+
+  if (!first || !last) {
+    return <div className="container">No data available</div>;
+  }
 
   // Get Sydney's detailed data for deciles and policy channels
   const sydneyYears = outputs.byCity.SYD?.years ?? [];
@@ -165,7 +175,7 @@ export function GuidedStory() {
   })();
 
   const simulationYears = summary.yearN - summary.year0;
-  const populationGrowth = (last.population - first.population) / first.population;
+  const populationGrowth = ((last.population ?? 0) - (first.population ?? 0)) / Math.max(1, first.population ?? 1);
   const priceGrowthPA = Math.pow(1 + summary.medianPriceChangePct, 1 / simulationYears) - 1;
 
   return (
@@ -237,19 +247,19 @@ export function GuidedStory() {
             <div style={{ display: "grid", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span className="muted">Population</span>
-                <strong>{first.population.toLocaleString()}</strong>
+                <strong>{(first.population ?? 0).toLocaleString()}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span className="muted">Dwelling stock</span>
-                <strong>{first.dwellingStock.toLocaleString()}</strong>
+                <strong>{(first.dwellingStock ?? 0).toLocaleString()}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span className="muted">Median price</span>
-                <strong>{fmtAUD(first.medianPrice)}</strong>
+                <strong>{fmtAUD(first.medianPrice ?? 0)}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
                 <span className="muted">Annual rent</span>
-                <strong>{fmtAUD(first.medianAnnualRent)}</strong>
+                <strong>{fmtAUD(first.medianAnnualRent ?? 0)}</strong>
               </div>
             </div>
 
@@ -260,9 +270,9 @@ export function GuidedStory() {
           </div>
           <PriceVsBaseline
             title="Price trajectory"
-            series={years}
+            series={timelinePoints}
             dataKey="medianPrice"
-            baseValue={first.medianPrice}
+            baseValue={first?.medianPrice ?? 0}
           />
         </div>
 
@@ -284,11 +294,11 @@ export function GuidedStory() {
         <div className="grid2">
           <PriceVsBaseline
             title="Rent trajectory"
-            series={years}
+            series={timelinePoints}
             dataKey="medianAnnualRent"
-            baseValue={first.medianAnnualRent}
+            baseValue={first?.medianAnnualRent ?? 0}
           />
-          <DwellingStockArea series={years} />
+          <DwellingStockArea series={timelinePoints} />
         </div>
 
         <Callout type="info">

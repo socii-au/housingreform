@@ -1,0 +1,8 @@
+# Python dependencies for ASGS data extraction scripts
+
+requests>=2.31.0
+geopandas>=0.14.0
+shapely>=2.0.0
+pyproj>=3.6.0
+pandas>=2.1.0
+openpyxl>=3.1.0  # For Excel file parsing

@@ -1,0 +1,447 @@
+[
+  {
+    "code": "101",
+    "name": "Capital Region",
+    "state": "1"
+  },
+  {
+    "code": "102",
+    "name": "Central Coast",
+    "state": "1"
+  },
+  {
+    "code": "103",
+    "name": "Central West",
+    "state": "1"
+  },
+  {
+    "code": "104",
+    "name": "Coffs Harbour - Grafton",
+    "state": "1"
+  },
+  {
+    "code": "105",
+    "name": "Far West and Orana",
+    "state": "1"
+  },
+  {
+    "code": "106",
+    "name": "Hunter Valley exc Newcastle",
+    "state": "1"
+  },
+  {
+    "code": "107",
+    "name": "Illawarra",
+    "state": "1"
+  },
+  {
+    "code": "108",
+    "name": "Mid North Coast",
+    "state": "1"
+  },
+  {
+    "code": "109",
+    "name": "Murray",
+    "state": "1"
+  },
+  {
+    "code": "110",
+    "name": "New England and North West",
+    "state": "1"
+  },
+  {
+    "code": "111",
+    "name": "Newcastle and Lake Macquarie",
+    "state": "1"
+  },
+  {
+    "code": "112",
+    "name": "Richmond - Tweed",
+    "state": "1"
+  },
+  {
+    "code": "113",
+    "name": "Riverina",
+    "state": "1"
+  },
+  {
+    "code": "114",
+    "name": "Southern Highlands and Shoalhaven",
+    "state": "1"
+  },
+  {
+    "code": "115",
+    "name": "Sydney - Baulkham Hills and Hawkesbury",
+    "state": "1"
+  },
+  {
+    "code": "116",
+    "name": "Sydney - Blacktown",
+    "state": "1"
+  },
+  {
+    "code": "117",
+    "name": "Sydney - City and Inner South",
+    "state": "1"
+  },
+  {
+    "code": "118",
+    "name": "Sydney - Eastern Suburbs",
+    "state": "1"
+  },
+  {
+    "code": "119",
+    "name": "Sydney - Inner South West",
+    "state": "1"
+  },
+  {
+    "code": "120",
+    "name": "Sydney - Inner West",
+    "state": "1"
+  },
+  {
+    "code": "121",
+    "name": "Sydney - North Sydney and Hornsby",
+    "state": "1"
+  },
+  {
+    "code": "122",
+    "name": "Sydney - Northern Beaches",
+    "state": "1"
+  },
+  {
+    "code": "123",
+    "name": "Sydney - Outer South West",
+    "state": "1"
+  },
+  {
+    "code": "124",
+    "name": "Sydney - Outer West and Blue Mountains",
+    "state": "1"
+  },
+  {
+    "code": "125",
+    "name": "Sydney - Parramatta",
+    "state": "1"
+  },
+  {
+    "code": "126",
+    "name": "Sydney - Ryde",
+    "state": "1"
+  },
+  {
+    "code": "127",
+    "name": "Sydney - South West",
+    "state": "1"
+  },
+  {
+    "code": "128",
+    "name": "Sydney - Sutherland",
+    "state": "1"
+  },
+  {
+    "code": "201",
+    "name": "Ballarat",
+    "state": "2"
+  },
+  {
+    "code": "202",
+    "name": "Bendigo",
+    "state": "2"
+  },
+  {
+    "code": "203",
+    "name": "Geelong",
+    "state": "2"
+  },
+  {
+    "code": "204",
+    "name": "Hume",
+    "state": "2"
+  },
+  {
+    "code": "205",
+    "name": "Latrobe - Gippsland",
+    "state": "2"
+  },
+  {
+    "code": "206",
+    "name": "Melbourne - Inner",
+    "state": "2"
+  },
+  {
+    "code": "207",
+    "name": "Melbourne - Inner East",
+    "state": "2"
+  },
+  {
+    "code": "208",
+    "name": "Melbourne - Inner South",
+    "state": "2"
+  },
+  {
+    "code": "209",
+    "name": "Melbourne - North East",
+    "state": "2"
+  },
+  {
+    "code": "210",
+    "name": "Melbourne - North West",
+    "state": "2"
+  },
+  {
+    "code": "211",
+    "name": "Melbourne - Outer East",
+    "state": "2"
+  },
+  {
+    "code": "212",
+    "name": "Melbourne - South East",
+    "state": "2"
+  },
+  {
+    "code": "213",
+    "name": "Melbourne - West",
+    "state": "2"
+  },
+  {
+    "code": "214",
+    "name": "Mornington Peninsula",
+    "state": "2"
+  },
+  {
+    "code": "215",
+    "name": "North West",
+    "state": "2"
+  },
+  {
+    "code": "216",
+    "name": "Shepparton",
+    "state": "2"
+  },
+  {
+    "code": "217",
+    "name": "Warrnambool and South West",
+    "state": "2"
+  },
+  {
+    "code": "301",
+    "name": "Brisbane - East",
+    "state": "3"
+  },
+  {
+    "code": "302",
+    "name": "Brisbane - North",
+    "state": "3"
+  },
+  {
+    "code": "303",
+    "name": "Brisbane - South",
+    "state": "3"
+  },
+  {
+    "code": "304",
+    "name": "Brisbane - West",
+    "state": "3"
+  },
+  {
+    "code": "305",
+    "name": "Brisbane Inner City",
+    "state": "3"
+  },
+  {
+    "code": "306",
+    "name": "Cairns",
+    "state": "3"
+  },
+  {
+    "code": "307",
+    "name": "Darling Downs - Maranoa",
+    "state": "3"
+  },
+  {
+    "code": "308",
+    "name": "Central Queensland",
+    "state": "3"
+  },
+  {
+    "code": "309",
+    "name": "Gold Coast",
+    "state": "3"
+  },
+  {
+    "code": "310",
+    "name": "Ipswich",
+    "state": "3"
+  },
+  {
+    "code": "311",
+    "name": "Logan - Beaudesert",
+    "state": "3"
+  },
+  {
+    "code": "312",
+    "name": "Mackay - Isaac - Whitsunday",
+    "state": "3"
+  },
+  {
+    "code": "313",
+    "name": "Moreton Bay - North",
+    "state": "3"
+  },
+  {
+    "code": "314",
+    "name": "Moreton Bay - South",
+    "state": "3"
+  },
+  {
+    "code": "315",
+    "name": "Queensland - Outback",
+    "state": "3"
+  },
+  {
+    "code": "316",
+    "name": "Sunshine Coast",
+    "state": "3"
+  },
+  {
+    "code": "317",
+    "name": "Toowoomba",
+    "state": "3"
+  },
+  {
+    "code": "318",
+    "name": "Townsville",
+    "state": "3"
+  },
+  {
+    "code": "319",
+    "name": "Wide Bay",
+    "state": "3"
+  },
+  {
+    "code": "401",
+    "name": "Adelaide - Central and Hills",
+    "state": "4"
+  },
+  {
+    "code": "402",
+    "name": "Adelaide - North",
+    "state": "4"
+  },
+  {
+    "code": "403",
+    "name": "Adelaide - South",
+    "state": "4"
+  },
+  {
+    "code": "404",
+    "name": "Adelaide - West",
+    "state": "4"
+  },
+  {
+    "code": "405",
+    "name": "Barossa - Yorke - Mid North",
+    "state": "4"
+  },
+  {
+    "code": "406",
+    "name": "South Australia - Outback",
+    "state": "4"
+  },
+  {
+    "code": "407",
+    "name": "South Australia - South East",
+    "state": "4"
+  },
+  {
+    "code": "501",
+    "name": "Bunbury",
+    "state": "5"
+  },
+  {
+    "code": "502",
+    "name": "Mandurah",
+    "state": "5"
+  },
+  {
+    "code": "503",
+    "name": "Perth - Inner",
+    "state": "5"
+  },
+  {
+    "code": "504",
+    "name": "Perth - North East",
+    "state": "5"
+  },
+  {
+    "code": "505",
+    "name": "Perth - North West",
+    "state": "5"
+  },
+  {
+    "code": "506",
+    "name": "Perth - South East",
+    "state": "5"
+  },
+  {
+    "code": "507",
+    "name": "Perth - South West",
+    "state": "5"
+  },
+  {
+    "code": "509",
+    "name": "Western Australia - Wheat Belt",
+    "state": "5"
+  },
+  {
+    "code": "510",
+    "name": "Western Australia - Outback (North)",
+    "state": "5"
+  },
+  {
+    "code": "511",
+    "name": "Western Australia - Outback (South)",
+    "state": "5"
+  },
+  {
+    "code": "601",
+    "name": "Hobart",
+    "state": "6"
+  },
+  {
+    "code": "602",
+    "name": "Launceston and North East",
+    "state": "6"
+  },
+  {
+    "code": "603",
+    "name": "South East",
+    "state": "6"
+  },
+  {
+    "code": "604",
+    "name": "West and North West",
+    "state": "6"
+  },
+  {
+    "code": "701",
+    "name": "Darwin",
+    "state": "7"
+  },
+  {
+    "code": "702",
+    "name": "Northern Territory - Outback",
+    "state": "7"
+  },
+  {
+    "code": "801",
+    "name": "Australian Capital Territory",
+    "state": "8"
+  },
+  {
+    "code": "901",
+    "name": "Other Territories",
+    "state": "9"
+  }
+]

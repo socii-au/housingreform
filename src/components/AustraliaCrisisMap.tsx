@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import type { CityId, StateId } from "../model/regions";
 import { ALL_STATES, STATE_NAMES, cityMeta } from "../model/regions";
 import type { ScenarioOutputs } from "../model/runScenario";
@@ -13,6 +13,26 @@ import {
   SUBREGION_WEIGHTS,
   polygonToPath,
 } from "./maps/auGeo";
+import { sanitizeHistoryBundle } from "../security/sanitize";
+import {
+  SA2_FEATURES,
+  computeSA2CrisisScore,
+  sa2PolygonToPath,
+  type SA2Feature,
+} from "./maps/sa2Data";
+import {
+  SA3_FEATURES,
+  computeSA3CrisisScore,
+  sa3PolygonToPath,
+  STATE_CODE_MAP,
+  type SA3Feature,
+} from "./maps/sa3Data";
+import {
+  SA4_FEATURES,
+  computeSA4CrisisScore,
+  sa4PolygonToPath,
+  type SA4Feature,
+} from "./maps/sa4Data";
 
 type CityPoint = {
   cityId: CityId;
@@ -160,6 +180,8 @@ function aggregateStateScore(opts: {
   return scores.reduce((a, b) => a + (b.w / wSum) * b.s, 0);
 }
 
+type MapLayer = "cities" | "sa2" | "sa3" | "sa4";
+
 export function AustraliaCrisisMap(props: {
   outputs: ScenarioOutputs;
   params: ScenarioParams;
@@ -167,8 +189,122 @@ export function AustraliaCrisisMap(props: {
   historyBundle?: HistoryBundle;
   title?: string;
 }) {
-  const { outputs, params, year, historyBundle } = props;
+  const { outputs, params, year } = props;
+  const historyBundle = sanitizeHistoryBundle(props.historyBundle) ?? undefined;
   const [hoverCity, setHoverCity] = useState<CityId | null>(null);
+  const [hoverSA2, setHoverSA2] = useState<SA2Feature | null>(null);
+  const [hoverSA3, setHoverSA3] = useState<SA3Feature | null>(null);
+  const [hoverSA4, setHoverSA4] = useState<SA4Feature | null>(null);
+  const [mapLayer, setMapLayer] = useState<MapLayer>("sa3"); // Default to SA3 layer
+
+  // Zoom and pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Zoom limits
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 8;
+  const ZOOM_STEP = 1.3;
+
+  // Handle mouse wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Calculate zoom direction
+    const delta = e.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * delta));
+
+    if (newZoom !== zoom) {
+      // Adjust pan to zoom toward mouse position
+      const zoomRatio = newZoom / zoom;
+      const newPanX = mouseX - (mouseX - pan.x) * zoomRatio;
+      const newPanY = mouseY - (mouseY - pan.y) * zoomRatio;
+
+      setZoom(newZoom);
+      setPan({ x: newPanX, y: newPanY });
+    }
+  }, [zoom, pan]);
+
+  // Handle pan start
+  const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.button !== 0) return; // Only left click
+    setIsPanning(true);
+    setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  }, [pan]);
+
+  // Handle pan move
+  const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isPanning) return;
+    setPan({
+      x: e.clientX - panStart.x,
+      y: e.clientY - panStart.y,
+    });
+  }, [isPanning, panStart]);
+
+  // Handle pan end
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Reset zoom and pan
+  const resetView = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  // Zoom in/out buttons
+  const zoomIn = useCallback(() => {
+    setZoom((z) => Math.min(MAX_ZOOM, z * ZOOM_STEP));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom((z) => Math.max(MIN_ZOOM, z / ZOOM_STEP));
+  }, []);
+
+  // Auto-switch to more granular layer when zoomed in
+  useEffect(() => {
+    if (zoom >= 4 && mapLayer === "sa4") {
+      setMapLayer("sa3");
+    } else if (zoom >= 6 && mapLayer === "sa3") {
+      setMapLayer("sa2");
+    }
+  }, [zoom, mapLayer]);
+
+  // Compute SA2 crisis scores (most granular)
+  const sa2Scores = useMemo(() => {
+    const out = new Map<string, number | null>();
+    SA2_FEATURES.forEach((f) => {
+      out.set(f.code, computeSA2CrisisScore(f));
+    });
+    return out;
+  }, []);
+
+  // Compute SA3 crisis scores
+  const sa3Scores = useMemo(() => {
+    const out = new Map<string, number | null>();
+    SA3_FEATURES.forEach((f) => {
+      out.set(f.code, computeSA3CrisisScore(f));
+    });
+    return out;
+  }, []);
+
+  // Compute SA4 crisis scores
+  const sa4Scores = useMemo(() => {
+    const out = new Map<string, number | null>();
+    SA4_FEATURES.forEach((f) => {
+      out.set(f.code, computeSA4CrisisScore(f));
+    });
+    return out;
+  }, []);
 
   const cityScores = useMemo(() => {
     const out: Partial<Record<CityId, ReturnType<typeof computeCrisisScore>>> = {};
@@ -224,17 +360,186 @@ export function AustraliaCrisisMap(props: {
   }, [cityScores, stateScores, params.cities]);
 
   const hoverDetail = hoverCity ? cityScores[hoverCity] : null;
+  const hoverSA2Score = hoverSA2 ? sa2Scores.get(hoverSA2.code) : null;
+  const hoverSA3Score = hoverSA3 ? sa3Scores.get(hoverSA3.code) : null;
+  const hoverSA4Score = hoverSA4 ? sa4Scores.get(hoverSA4.code) : null;
 
   return (
     <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>{props.title ?? "National crisis heatmap"}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+        <div className="h2" style={{ margin: 0 }}>{props.title ?? "National crisis heatmap"}</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {(["sa2", "sa3", "sa4", "cities"] as const).map((layer) => {
+            const labels: Record<MapLayer, string> = {
+              sa2: `SA2 (${SA2_FEATURES.length})`,
+              sa3: `SA3 (${SA3_FEATURES.length})`,
+              sa4: `SA4 (${SA4_FEATURES.length})`,
+              cities: "Cities",
+            };
+            const isActive = mapLayer === layer;
+            return (
+              <button
+                key={layer}
+                type="button"
+                onClick={() => setMapLayer(layer)}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: 12,
+                  fontWeight: isActive ? 700 : 500,
+                  background: isActive ? "var(--accent)" : "var(--surface-alt)",
+                  color: isActive ? "white" : "var(--fg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                }}
+              >
+                {labels[layer]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <div className="muted" style={{ fontSize: 13, marginBottom: 10 }}>
-        Updates live when you hover across years in the charts. Scoring blends rent burden and price-to-income (shape-first).
+        {mapLayer === "sa2"
+          ? `Showing ${SA2_FEATURES.length} SA2 statistical areas (most granular) with 2024 baseline data. Hover for details.`
+          : mapLayer === "sa3"
+            ? `Showing ${SA3_FEATURES.length} SA3 statistical areas (medium detail) with 2024 baseline data. Hover for details.`
+            : mapLayer === "sa4"
+              ? `Showing ${SA4_FEATURES.length} SA4 statistical areas (broadest) with 2024 baseline data. Hover for details.`
+              : "Updates live when you hover across years in the charts. Scoring blends rent burden and price-to-income (shape-first)."}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14, alignItems: "start" }}>
-        <div style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", background: "white" }}>
-          <svg viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} width="100%" height="520" role="img" aria-label="Australia crisis heatmap">
+        <div style={{ position: "relative", borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", background: "white" }}>
+          {/* Zoom controls */}
+          <div style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            background: "rgba(255,255,255,0.95)",
+            borderRadius: 8,
+            padding: 4,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}>
+            <button
+              onClick={zoomIn}
+              disabled={zoom >= MAX_ZOOM}
+              style={{
+                width: 32,
+                height: 32,
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                background: zoom >= MAX_ZOOM ? "#e5e7eb" : "white",
+                cursor: zoom >= MAX_ZOOM ? "not-allowed" : "pointer",
+                fontSize: 18,
+                fontWeight: 700,
+                color: zoom >= MAX_ZOOM ? "#9ca3af" : "#0f172a",
+              }}
+              title="Zoom in (or use scroll wheel)"
+            >
+              +
+            </button>
+            <button
+              onClick={zoomOut}
+              disabled={zoom <= MIN_ZOOM}
+              style={{
+                width: 32,
+                height: 32,
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                background: zoom <= MIN_ZOOM ? "#e5e7eb" : "white",
+                cursor: zoom <= MIN_ZOOM ? "not-allowed" : "pointer",
+                fontSize: 18,
+                fontWeight: 700,
+                color: zoom <= MIN_ZOOM ? "#9ca3af" : "#0f172a",
+              }}
+              title="Zoom out (or use scroll wheel)"
+            >
+              −
+            </button>
+            <button
+              onClick={resetView}
+              disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
+              style={{
+                width: 32,
+                height: 32,
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+                background: (zoom === 1 && pan.x === 0 && pan.y === 0) ? "#e5e7eb" : "white",
+                cursor: (zoom === 1 && pan.x === 0 && pan.y === 0) ? "not-allowed" : "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+                color: (zoom === 1 && pan.x === 0 && pan.y === 0) ? "#9ca3af" : "#0f172a",
+              }}
+              title="Reset view"
+            >
+              ⟲
+            </button>
+            <div style={{
+              fontSize: 10,
+              textAlign: "center",
+              color: "#6b7280",
+              marginTop: 2,
+            }}>
+              {zoom.toFixed(1)}×
+            </div>
+          </div>
+
+          {/* Zoom hint */}
+          {zoom === 1 && (
+            <div style={{
+              position: "absolute",
+              bottom: 10,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 10,
+              background: "rgba(15,23,42,0.85)",
+              color: "white",
+              padding: "6px 12px",
+              borderRadius: 6,
+              fontSize: 11,
+              whiteSpace: "nowrap",
+            }}>
+              Scroll to zoom • Drag to pan • Double-click to zoom in
+            </div>
+          )}
+
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VIEW.w} ${VIEW.h}`}
+            width="100%"
+            height="520"
+            role="img"
+            aria-label="Australia crisis heatmap"
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              const svg = svgRef.current;
+              if (!svg) return;
+              const rect = svg.getBoundingClientRect();
+              const mouseX = e.clientX - rect.left;
+              const mouseY = e.clientY - rect.top;
+              const newZoom = Math.min(MAX_ZOOM, zoom * ZOOM_STEP);
+              const zoomRatio = newZoom / zoom;
+              setPan({
+                x: mouseX - (mouseX - pan.x) * zoomRatio,
+                y: mouseY - (mouseY - pan.y) * zoomRatio,
+              });
+              setZoom(newZoom);
+            }}
+            style={{
+              cursor: isPanning ? "grabbing" : "grab",
+              userSelect: "none",
+            }}
+          >
             <defs>
               {AU_STATES_GEOJSON.features.map((f) => (
                 <clipPath key={f.properties.id} id={`clip-${f.properties.id}`}>
@@ -242,6 +547,9 @@ export function AustraliaCrisisMap(props: {
                 </clipPath>
               ))}
             </defs>
+
+            {/* Transform group for zoom and pan */}
+            <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
 
             {/* State polygons (base fill) */}
             {AU_STATES_GEOJSON.features.map((f) => {
@@ -254,7 +562,7 @@ export function AustraliaCrisisMap(props: {
                   d={polygonToPath(f.geometry)}
                   fill={fill}
                   stroke="#cbd5e1"
-                  strokeWidth={1.5}
+                  strokeWidth={1.5 / zoom}
                 />
               );
             })}
@@ -272,29 +580,102 @@ export function AustraliaCrisisMap(props: {
                   clipPath={`url(#clip-${st})`}
                   fill={fill}
                   stroke="rgba(15,23,42,0.08)"
-                  strokeWidth={1}
+                  strokeWidth={1 / zoom}
                 />
               );
             })}
 
-            {/* Precomputed catchment mesh (true choropleth cells) */}
-            {AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => {
-              const cityId = f.properties.cityId as CityId;
-              const st = f.properties.state as StateId;
-              const detail = cityScores[cityId];
-              const d = polygonToPath(f.geometry);
-              const fill = detail ? alphaColor(crisisColor(detail.score01), 0.60) : "#e5e7eb";
-              return (
-                <path
-                  key={`cell-${cityId}`}
-                  d={d}
-                  clipPath={`url(#clip-${st})`}
-                  fill={fill}
-                  stroke="rgba(15,23,42,0.10)"
-                  strokeWidth={1}
-                />
-              );
-            })}
+            {/* SA2 choropleth layer (when selected - most granular) */}
+            {mapLayer === "sa2" &&
+              SA2_FEATURES.map((f) => {
+                const score = sa2Scores.get(f.code);
+                const stateId = STATE_CODE_MAP[f.state as keyof typeof STATE_CODE_MAP] as StateId;
+                const fill = score != null ? alphaColor(crisisColor(score), 0.65) : "#e5e7eb";
+                const isHover = hoverSA2?.code === f.code;
+                return (
+                  <path
+                    key={`sa2-${f.code}`}
+                    d={sa2PolygonToPath(f.polygon)}
+                    clipPath={stateId ? `url(#clip-${stateId})` : undefined}
+                    fill={fill}
+                    stroke={isHover ? "#0f172a" : "rgba(15,23,42,0.12)"}
+                    strokeWidth={(isHover ? 2 : 0.4) / zoom}
+                    onMouseEnter={() => setHoverSA2(f)}
+                    onMouseLeave={() => setHoverSA2(null)}
+                    style={{ cursor: isPanning ? "grabbing" : "pointer" }}
+                  >
+                    <title>{f.name} ({f.code}) — {score != null ? `${(score * 100).toFixed(0)}/100` : "no data"}</title>
+                  </path>
+                );
+              })}
+
+            {/* SA4 choropleth layer (when selected) */}
+            {mapLayer === "sa4" &&
+              SA4_FEATURES.map((f) => {
+                const score = sa4Scores.get(f.code);
+                const stateId = STATE_CODE_MAP[f.state] as StateId;
+                const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
+                const isHover = hoverSA4?.code === f.code;
+                return (
+                  <path
+                    key={`sa4-${f.code}`}
+                    d={sa4PolygonToPath(f.polygon)}
+                    clipPath={stateId ? `url(#clip-${stateId})` : undefined}
+                    fill={fill}
+                    stroke={isHover ? "#0f172a" : "rgba(15,23,42,0.18)"}
+                    strokeWidth={(isHover ? 2 : 0.8) / zoom}
+                    onMouseEnter={() => setHoverSA4(f)}
+                    onMouseLeave={() => setHoverSA4(null)}
+                    style={{ cursor: isPanning ? "grabbing" : "pointer" }}
+                  >
+                    <title>{f.name} ({f.code}) — {score != null ? `${(score * 100).toFixed(0)}/100` : "no data"}</title>
+                  </path>
+                );
+              })}
+
+            {/* SA3 choropleth layer (when selected) */}
+            {mapLayer === "sa3" &&
+              SA3_FEATURES.map((f) => {
+                const score = sa3Scores.get(f.code);
+                const stateId = STATE_CODE_MAP[f.state] as StateId;
+                const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
+                const isHover = hoverSA3?.code === f.code;
+                return (
+                  <path
+                    key={`sa3-${f.code}`}
+                    d={sa3PolygonToPath(f.polygon)}
+                    clipPath={stateId ? `url(#clip-${stateId})` : undefined}
+                    fill={fill}
+                    stroke={isHover ? "#0f172a" : "rgba(15,23,42,0.18)"}
+                    strokeWidth={(isHover ? 2 : 0.8) / zoom}
+                    onMouseEnter={() => setHoverSA3(f)}
+                    onMouseLeave={() => setHoverSA3(null)}
+                    style={{ cursor: isPanning ? "grabbing" : "pointer" }}
+                  >
+                    <title>{f.name} ({f.code}) — {score != null ? `${(score * 100).toFixed(0)}/100` : "no data"}</title>
+                  </path>
+                );
+              })}
+
+            {/* City catchment mesh (when selected) */}
+            {mapLayer === "cities" &&
+              AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => {
+                const cityId = f.properties.cityId as CityId;
+                const st = f.properties.state as StateId;
+                const detail = cityScores[cityId];
+                const d = polygonToPath(f.geometry);
+                const fill = detail ? alphaColor(crisisColor(detail.score01), 0.60) : "#e5e7eb";
+                return (
+                  <path
+                    key={`cell-${cityId}`}
+                    d={d}
+                    clipPath={`url(#clip-${st})`}
+                    fill={fill}
+                    stroke="rgba(15,23,42,0.10)"
+                    strokeWidth={1 / zoom}
+                  />
+                );
+              })}
 
             {/* State borders on top */}
             {AU_STATES_GEOJSON.features.map((f) => (
@@ -303,7 +684,7 @@ export function AustraliaCrisisMap(props: {
                 d={polygonToPath(f.geometry)}
                 fill="none"
                 stroke="#94a3b8"
-                strokeWidth={2}
+                strokeWidth={2 / zoom}
               />
             ))}
 
@@ -317,10 +698,10 @@ export function AustraliaCrisisMap(props: {
                   key={`pt-${p.cityId}`}
                   onMouseEnter={() => setHoverCity(p.cityId)}
                   onMouseLeave={() => setHoverCity(null)}
-                  style={{ cursor: "default" }}
+                  style={{ cursor: isPanning ? "grabbing" : "pointer" }}
                 >
-                  <circle cx={p.x} cy={p.y} r={6} fill={col} stroke="#0f172a" strokeWidth={1} />
-                  <circle cx={p.x} cy={p.y} r={12} fill="transparent" />
+                  <circle cx={p.x} cy={p.y} r={6 / zoom} fill={col} stroke="#0f172a" strokeWidth={1 / zoom} />
+                  <circle cx={p.x} cy={p.y} r={12 / zoom} fill="transparent" />
                   <title>{name}</title>
                 </g>
               );
@@ -340,11 +721,13 @@ export function AustraliaCrisisMap(props: {
               };
               const a = anchor[st];
               return (
-                <text key={`lbl-${st}`} x={a.x} y={a.y} fontSize={14} fill="#0f172a" style={{ fontWeight: 900 }}>
+                <text key={`lbl-${st}`} x={a.x} y={a.y} fontSize={14 / zoom} fill="#0f172a" style={{ fontWeight: 900 }}>
                   {st}
                 </text>
               );
             })}
+
+            </g>
           </svg>
         </div>
 
@@ -355,7 +738,13 @@ export function AustraliaCrisisMap(props: {
           </div>
 
           <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Hover a city marker to see details. State shading is a population-weighted average of included cities.
+            {mapLayer === "sa2"
+              ? "Hover an SA2 region to see baseline (2024) data. SA2 is the most granular ABS geography."
+              : mapLayer === "sa3"
+                ? "Hover an SA3 region to see baseline (2024) data. Scores use the same crisis formula as city projections."
+                : mapLayer === "sa4"
+                  ? "Hover an SA4 region to see baseline (2024) data. SA4s are broader aggregations of SA3s."
+                  : "Hover a city marker to see details. State shading is a population-weighted average of included cities."}
           </div>
 
           <div style={{ marginTop: 12 }}>
@@ -375,7 +764,85 @@ export function AustraliaCrisisMap(props: {
 
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
             <div style={{ fontWeight: 900, marginBottom: 6 }}>Hover details</div>
-            {hoverCity && hoverDetail ? (
+            {mapLayer === "sa2" && hoverSA2 ? (
+              <div style={{ fontSize: 13, lineHeight: 1.45 }}>
+                <div style={{ fontWeight: 900 }}>{hoverSA2.name}</div>
+                <div className="muted">SA2 {hoverSA2.code} • {STATE_CODE_MAP[hoverSA2.state as keyof typeof STATE_CODE_MAP]} • SA3: {hoverSA2.parentSa3}</div>
+                {hoverSA2.series2024 && hoverSA2Score != null ? (
+                  <>
+                    <div style={{ marginTop: 8 }}>
+                      Crisis score: <strong>{Math.round(hoverSA2Score * 100)}/100</strong>
+                    </div>
+                    <div>
+                      Median price: <strong>${(hoverSA2.series2024.medianPrice / 1000).toFixed(0)}k</strong>
+                    </div>
+                    <div>
+                      Annual rent: <strong>${(hoverSA2.series2024.medianAnnualRent / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Annual wage: <strong>${(hoverSA2.series2024.medianAnnualWage / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Population: <strong>{(hoverSA2.series2024.population / 1000).toFixed(1)}k</strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className="muted" style={{ marginTop: 8 }}>No baseline data</div>
+                )}
+              </div>
+            ) : mapLayer === "sa4" && hoverSA4 ? (
+              <div style={{ fontSize: 13, lineHeight: 1.45 }}>
+                <div style={{ fontWeight: 900 }}>{hoverSA4.name}</div>
+                <div className="muted">SA4 {hoverSA4.code} • {STATE_CODE_MAP[hoverSA4.state]}</div>
+                {hoverSA4.series2024 && hoverSA4Score != null ? (
+                  <>
+                    <div style={{ marginTop: 8 }}>
+                      Crisis score: <strong>{Math.round(hoverSA4Score * 100)}/100</strong>
+                    </div>
+                    <div>
+                      Median price: <strong>${(hoverSA4.series2024.medianPrice / 1000).toFixed(0)}k</strong>
+                    </div>
+                    <div>
+                      Annual rent: <strong>${(hoverSA4.series2024.medianAnnualRent / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Annual wage: <strong>${(hoverSA4.series2024.medianAnnualWage / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Population: <strong>{(hoverSA4.series2024.population / 1000).toFixed(1)}k</strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className="muted" style={{ marginTop: 8 }}>No baseline data</div>
+                )}
+              </div>
+            ) : mapLayer === "sa3" && hoverSA3 ? (
+              <div style={{ fontSize: 13, lineHeight: 1.45 }}>
+                <div style={{ fontWeight: 900 }}>{hoverSA3.name}</div>
+                <div className="muted">SA3 {hoverSA3.code} • {STATE_CODE_MAP[hoverSA3.state]} • SA4: {hoverSA3.parentSa4}</div>
+                {hoverSA3.series2024 && hoverSA3Score != null ? (
+                  <>
+                    <div style={{ marginTop: 8 }}>
+                      Crisis score: <strong>{Math.round(hoverSA3Score * 100)}/100</strong>
+                    </div>
+                    <div>
+                      Median price: <strong>${(hoverSA3.series2024.medianPrice / 1000).toFixed(0)}k</strong>
+                    </div>
+                    <div>
+                      Annual rent: <strong>${(hoverSA3.series2024.medianAnnualRent / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Annual wage: <strong>${(hoverSA3.series2024.medianAnnualWage / 1000).toFixed(1)}k</strong>
+                    </div>
+                    <div>
+                      Population: <strong>{(hoverSA3.series2024.population / 1000).toFixed(1)}k</strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className="muted" style={{ marginTop: 8 }}>No baseline data</div>
+                )}
+              </div>
+            ) : hoverCity && hoverDetail ? (
               <div style={{ fontSize: 13, lineHeight: 1.45 }}>
                 <div style={{ fontWeight: 900 }}>{cityMeta(hoverCity).name}</div>
                 <div className="muted">{STATE_NAMES[cityMeta(hoverCity).state]}</div>
@@ -391,7 +858,13 @@ export function AustraliaCrisisMap(props: {
               </div>
             ) : (
               <div className="muted" style={{ fontSize: 13 }}>
-                Hover a city marker on the map.
+                {mapLayer === "sa2"
+                  ? "Hover an SA2 region on the map."
+                  : mapLayer === "sa3"
+                    ? "Hover an SA3 region on the map."
+                    : mapLayer === "sa4"
+                      ? "Hover an SA4 region on the map."
+                      : "Hover a city marker on the map."}
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
-import type { CityId, Year } from "../regions";
+import type { CityId } from "../regions";
+import type { Year } from "../methodology";
 
 export interface HistoricalSeries {
   years: Year[];

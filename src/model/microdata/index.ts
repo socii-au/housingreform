@@ -5,6 +5,7 @@ import { fromABS, fromHILDA, DEFAULT_TENURE_MAPS, type FieldMapping, type Record
 import { generateSyntheticMicrodataBundle } from "./synthetic";
 import { mixRealAndSynthetic, reweightTenureShares } from "./reinforce";
 import { autodetectFromByCity } from "./autodetect";
+import { sanitizeByCityRowsMapWithReport } from "../../security/sanitize";
 
 export type MicroSource = "abs" | "hilda" | "synthetic" | "mixed";
 
@@ -40,6 +41,13 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
       income: number;
       tenure: number;
       weight: number;
+    };
+    sanitization?: {
+      droppedCityKeys: number;
+      keptCityKeys: number;
+      droppedRows: number;
+      truncatedRows: number;
+      maxRowsPerCity: number;
     };
   };
 } {
@@ -98,7 +106,15 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
       throw new Error(`buildMicrodataBundle: rawByCity is required for source=${opts.source}`);
     }
 
-    const inferred = (!opts.fields || !opts.tenureMap) ? autodetectFromByCity({ byCity: opts.rawByCity }) : null;
+    const sanitizedIn = sanitizeByCityRowsMapWithReport(opts.rawByCity as unknown);
+    if (sanitizedIn.report.droppedCityKeys > 0 || sanitizedIn.report.droppedRows > 0 || sanitizedIn.report.truncatedRows > 0) {
+      warnings.push(
+        `Microdata input sanitized: dropped ${sanitizedIn.report.droppedCityKeys} invalid city keys, dropped ${sanitizedIn.report.droppedRows} non-object rows, truncated ${sanitizedIn.report.truncatedRows} rows (cap ${sanitizedIn.report.maxRowsPerCity}/city).`
+      );
+    }
+    const safeByCity = sanitizedIn.sanitized;
+
+    const inferred = (!opts.fields || !opts.tenureMap) ? autodetectFromByCity({ byCity: safeByCity }) : null;
     const fields = opts.fields ?? inferred?.fields;
     const tenure2 = { map: opts.tenureMap ?? inferred?.tenureMap ?? tenure.map };
     if (!fields) {
@@ -132,15 +148,15 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
     }
     const parsed =
       opts.source === "abs"
-        ? fromABS({ byCity: opts.rawByCity, fields, tenure: tenure2 })
-        : fromHILDA({ byCity: opts.rawByCity, fields, tenure: tenure2 });
+        ? fromABS({ byCity: safeByCity, fields, tenure: tenure2 })
+        : fromHILDA({ byCity: safeByCity, fields, tenure: tenure2 });
     notes.push(`${opts.source.toUpperCase()} microdata mapped into canonical MicroRecord rows.`);
-    warnCoverage(opts.rawByCity);
+    warnCoverage(safeByCity);
     const final = maybeReweight(parsed.byCity, opts.tenureTargetsByCity, notes).byCity;
     warnIncomeUnits(final);
     return {
       byCity: final,
-      meta: { source: opts.source, notes, warnings, inferredMappings, confidence },
+      meta: { source: opts.source, notes, warnings, inferredMappings, confidence, sanitization: sanitizedIn.report },
     };
   }
 
@@ -148,7 +164,15 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
   if (!opts.rawByCity) {
     throw new Error("buildMicrodataBundle: rawByCity is required for source=mixed");
   }
-  const inferred = (!opts.fields || !opts.tenureMap) ? autodetectFromByCity({ byCity: opts.rawByCity }) : null;
+  const sanitizedIn = sanitizeByCityRowsMapWithReport(opts.rawByCity as unknown);
+  if (sanitizedIn.report.droppedCityKeys > 0 || sanitizedIn.report.droppedRows > 0 || sanitizedIn.report.truncatedRows > 0) {
+    warnings.push(
+      `Microdata input sanitized: dropped ${sanitizedIn.report.droppedCityKeys} invalid city keys, dropped ${sanitizedIn.report.droppedRows} non-object rows, truncated ${sanitizedIn.report.truncatedRows} rows (cap ${sanitizedIn.report.maxRowsPerCity}/city).`
+    );
+  }
+  const safeByCity = sanitizedIn.sanitized;
+
+  const inferred = (!opts.fields || !opts.tenureMap) ? autodetectFromByCity({ byCity: safeByCity }) : null;
   const fields = opts.fields ?? inferred?.fields;
   const tenure2 = { map: opts.tenureMap ?? inferred?.tenureMap ?? tenure.map };
   if (!fields) {
@@ -179,7 +203,7 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
       );
     }
   }
-  const real = fromABS({ byCity: opts.rawByCity, fields, tenure: tenure2 }).byCity;
+  const real = fromABS({ byCity: safeByCity, fields, tenure: tenure2 }).byCity;
   const syn = synth().byCity;
   notes.push("Mixed microdata: combining real survey rows with synthetic reinforcement.");
   const mixed = mixRealAndSynthetic({
@@ -188,9 +212,9 @@ export function buildMicrodataBundle(opts: BuildMicrodataOptions): {
     realWeightShare: opts.realWeightShare ?? 0.7,
   }).byCity;
   const rew = maybeReweight(mixed, opts.tenureTargetsByCity, notes);
-  warnCoverage(opts.rawByCity);
+  warnCoverage(safeByCity);
   warnIncomeUnits(rew.byCity);
-  return { byCity: rew.byCity, meta: { source: opts.source, notes, warnings, inferredMappings, confidence } };
+  return { byCity: rew.byCity, meta: { source: opts.source, notes, warnings, inferredMappings, confidence, sanitization: sanitizedIn.report } };
 }
 
 function maybeReweight(

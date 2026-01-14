@@ -1,0 +1,2042 @@
+[
+  {
+    "code": "10102",
+    "name": "Queanbeyan",
+    "state": "1",
+    "parentSa4": "101"
+  },
+  {
+    "code": "10103",
+    "name": "Snowy Mountains",
+    "state": "1",
+    "parentSa4": "101"
+  },
+  {
+    "code": "10104",
+    "name": "South Coast",
+    "state": "1",
+    "parentSa4": "101"
+  },
+  {
+    "code": "10105",
+    "name": "Goulburn - Mulwaree",
+    "state": "1",
+    "parentSa4": "101"
+  },
+  {
+    "code": "10106",
+    "name": "Young - Yass",
+    "state": "1",
+    "parentSa4": "101"
+  },
+  {
+    "code": "10201",
+    "name": "Gosford",
+    "state": "1",
+    "parentSa4": "102"
+  },
+  {
+    "code": "10202",
+    "name": "Wyong",
+    "state": "1",
+    "parentSa4": "102"
+  },
+  {
+    "code": "10301",
+    "name": "Bathurst",
+    "state": "1",
+    "parentSa4": "103"
+  },
+  {
+    "code": "10302",
+    "name": "Lachlan Valley",
+    "state": "1",
+    "parentSa4": "103"
+  },
+  {
+    "code": "10303",
+    "name": "Lithgow - Mudgee",
+    "state": "1",
+    "parentSa4": "103"
+  },
+  {
+    "code": "10304",
+    "name": "Orange",
+    "state": "1",
+    "parentSa4": "103"
+  },
+  {
+    "code": "10401",
+    "name": "Clarence Valley",
+    "state": "1",
+    "parentSa4": "104"
+  },
+  {
+    "code": "10402",
+    "name": "Coffs Harbour",
+    "state": "1",
+    "parentSa4": "104"
+  },
+  {
+    "code": "10501",
+    "name": "Bourke - Cobar - Coonamble",
+    "state": "1",
+    "parentSa4": "105"
+  },
+  {
+    "code": "10502",
+    "name": "Broken Hill and Far West",
+    "state": "1",
+    "parentSa4": "105"
+  },
+  {
+    "code": "10503",
+    "name": "Dubbo",
+    "state": "1",
+    "parentSa4": "105"
+  },
+  {
+    "code": "10601",
+    "name": "Lower Hunter",
+    "state": "1",
+    "parentSa4": "106"
+  },
+  {
+    "code": "10602",
+    "name": "Maitland",
+    "state": "1",
+    "parentSa4": "106"
+  },
+  {
+    "code": "10603",
+    "name": "Port Stephens",
+    "state": "1",
+    "parentSa4": "106"
+  },
+  {
+    "code": "10604",
+    "name": "Upper Hunter",
+    "state": "1",
+    "parentSa4": "106"
+  },
+  {
+    "code": "10701",
+    "name": "Dapto - Port Kembla",
+    "state": "1",
+    "parentSa4": "107"
+  },
+  {
+    "code": "10702",
+    "name": "Illawarra Catchment Reserve",
+    "state": "1",
+    "parentSa4": "107"
+  },
+  {
+    "code": "10703",
+    "name": "Kiama - Shellharbour",
+    "state": "1",
+    "parentSa4": "107"
+  },
+  {
+    "code": "10704",
+    "name": "Wollongong",
+    "state": "1",
+    "parentSa4": "107"
+  },
+  {
+    "code": "10801",
+    "name": "Great Lakes",
+    "state": "1",
+    "parentSa4": "108"
+  },
+  {
+    "code": "10802",
+    "name": "Kempsey - Nambucca",
+    "state": "1",
+    "parentSa4": "108"
+  },
+  {
+    "code": "10803",
+    "name": "Lord Howe Island",
+    "state": "1",
+    "parentSa4": "108"
+  },
+  {
+    "code": "10804",
+    "name": "Port Macquarie",
+    "state": "1",
+    "parentSa4": "108"
+  },
+  {
+    "code": "10805",
+    "name": "Taree - Gloucester",
+    "state": "1",
+    "parentSa4": "108"
+  },
+  {
+    "code": "10901",
+    "name": "Albury",
+    "state": "1",
+    "parentSa4": "109"
+  },
+  {
+    "code": "10902",
+    "name": "Lower Murray",
+    "state": "1",
+    "parentSa4": "109"
+  },
+  {
+    "code": "10903",
+    "name": "Upper Murray exc. Albury",
+    "state": "1",
+    "parentSa4": "109"
+  },
+  {
+    "code": "11001",
+    "name": "Armidale",
+    "state": "1",
+    "parentSa4": "110"
+  },
+  {
+    "code": "11002",
+    "name": "Inverell - Tenterfield",
+    "state": "1",
+    "parentSa4": "110"
+  },
+  {
+    "code": "11003",
+    "name": "Moree - Narrabri",
+    "state": "1",
+    "parentSa4": "110"
+  },
+  {
+    "code": "11004",
+    "name": "Tamworth - Gunnedah",
+    "state": "1",
+    "parentSa4": "110"
+  },
+  {
+    "code": "11101",
+    "name": "Lake Macquarie - East",
+    "state": "1",
+    "parentSa4": "111"
+  },
+  {
+    "code": "11102",
+    "name": "Lake Macquarie - West",
+    "state": "1",
+    "parentSa4": "111"
+  },
+  {
+    "code": "11103",
+    "name": "Newcastle",
+    "state": "1",
+    "parentSa4": "111"
+  },
+  {
+    "code": "11201",
+    "name": "Richmond Valley - Coastal",
+    "state": "1",
+    "parentSa4": "112"
+  },
+  {
+    "code": "11202",
+    "name": "Richmond Valley - Hinterland",
+    "state": "1",
+    "parentSa4": "112"
+  },
+  {
+    "code": "11203",
+    "name": "Tweed Valley",
+    "state": "1",
+    "parentSa4": "112"
+  },
+  {
+    "code": "11301",
+    "name": "Griffith - Murrumbidgee (West)",
+    "state": "1",
+    "parentSa4": "113"
+  },
+  {
+    "code": "11302",
+    "name": "Tumut - Tumbarumba",
+    "state": "1",
+    "parentSa4": "113"
+  },
+  {
+    "code": "11303",
+    "name": "Wagga Wagga",
+    "state": "1",
+    "parentSa4": "113"
+  },
+  {
+    "code": "11401",
+    "name": "Shoalhaven",
+    "state": "1",
+    "parentSa4": "114"
+  },
+  {
+    "code": "11402",
+    "name": "Southern Highlands",
+    "state": "1",
+    "parentSa4": "114"
+  },
+  {
+    "code": "11501",
+    "name": "Baulkham Hills",
+    "state": "1",
+    "parentSa4": "115"
+  },
+  {
+    "code": "11502",
+    "name": "Dural - Wisemans Ferry",
+    "state": "1",
+    "parentSa4": "115"
+  },
+  {
+    "code": "11503",
+    "name": "Hawkesbury",
+    "state": "1",
+    "parentSa4": "115"
+  },
+  {
+    "code": "11504",
+    "name": "Rouse Hill - McGraths Hill",
+    "state": "1",
+    "parentSa4": "115"
+  },
+  {
+    "code": "11601",
+    "name": "Blacktown",
+    "state": "1",
+    "parentSa4": "116"
+  },
+  {
+    "code": "11602",
+    "name": "Blacktown - North",
+    "state": "1",
+    "parentSa4": "116"
+  },
+  {
+    "code": "11603",
+    "name": "Mount Druitt",
+    "state": "1",
+    "parentSa4": "116"
+  },
+  {
+    "code": "11701",
+    "name": "Botany",
+    "state": "1",
+    "parentSa4": "117"
+  },
+  {
+    "code": "12001",
+    "name": "Canada Bay",
+    "state": "1",
+    "parentSa4": "120"
+  },
+  {
+    "code": "12002",
+    "name": "Leichhardt",
+    "state": "1",
+    "parentSa4": "120"
+  },
+  {
+    "code": "11702",
+    "name": "Marrickville - Sydenham - Petersham",
+    "state": "1",
+    "parentSa4": "117"
+  },
+  {
+    "code": "11703",
+    "name": "Sydney Inner City",
+    "state": "1",
+    "parentSa4": "117"
+  },
+  {
+    "code": "11801",
+    "name": "Eastern Suburbs - North",
+    "state": "1",
+    "parentSa4": "118"
+  },
+  {
+    "code": "11802",
+    "name": "Eastern Suburbs - South",
+    "state": "1",
+    "parentSa4": "118"
+  },
+  {
+    "code": "12301",
+    "name": "Camden",
+    "state": "1",
+    "parentSa4": "123"
+  },
+  {
+    "code": "12302",
+    "name": "Campbelltown (NSW)",
+    "state": "1",
+    "parentSa4": "123"
+  },
+  {
+    "code": "12303",
+    "name": "Wollondilly",
+    "state": "1",
+    "parentSa4": "123"
+  },
+  {
+    "code": "12401",
+    "name": "Blue Mountains",
+    "state": "1",
+    "parentSa4": "124"
+  },
+  {
+    "code": "12402",
+    "name": "Blue Mountains - South",
+    "state": "1",
+    "parentSa4": "124"
+  },
+  {
+    "code": "12403",
+    "name": "Penrith",
+    "state": "1",
+    "parentSa4": "124"
+  },
+  {
+    "code": "12404",
+    "name": "Richmond - Windsor",
+    "state": "1",
+    "parentSa4": "124"
+  },
+  {
+    "code": "12405",
+    "name": "St Marys",
+    "state": "1",
+    "parentSa4": "124"
+  },
+  {
+    "code": "12501",
+    "name": "Auburn",
+    "state": "1",
+    "parentSa4": "125"
+  },
+  {
+    "code": "80110",
+    "name": "Molonglo",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "80111",
+    "name": "Uriarra - Namadgi",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "11901",
+    "name": "Bankstown",
+    "state": "1",
+    "parentSa4": "119"
+  },
+  {
+    "code": "11902",
+    "name": "Canterbury",
+    "state": "1",
+    "parentSa4": "119"
+  },
+  {
+    "code": "11903",
+    "name": "Hurstville",
+    "state": "1",
+    "parentSa4": "119"
+  },
+  {
+    "code": "11904",
+    "name": "Kogarah - Rockdale",
+    "state": "1",
+    "parentSa4": "119"
+  },
+  {
+    "code": "12003",
+    "name": "Strathfield - Burwood - Ashfield",
+    "state": "1",
+    "parentSa4": "120"
+  },
+  {
+    "code": "12101",
+    "name": "Chatswood - Lane Cove",
+    "state": "1",
+    "parentSa4": "121"
+  },
+  {
+    "code": "12102",
+    "name": "Hornsby",
+    "state": "1",
+    "parentSa4": "121"
+  },
+  {
+    "code": "12103",
+    "name": "Ku-ring-gai",
+    "state": "1",
+    "parentSa4": "121"
+  },
+  {
+    "code": "12104",
+    "name": "North Sydney - Mosman",
+    "state": "1",
+    "parentSa4": "121"
+  },
+  {
+    "code": "12201",
+    "name": "Manly",
+    "state": "1",
+    "parentSa4": "122"
+  },
+  {
+    "code": "12202",
+    "name": "Pittwater",
+    "state": "1",
+    "parentSa4": "122"
+  },
+  {
+    "code": "12203",
+    "name": "Warringah",
+    "state": "1",
+    "parentSa4": "122"
+  },
+  {
+    "code": "12502",
+    "name": "Carlingford",
+    "state": "1",
+    "parentSa4": "125"
+  },
+  {
+    "code": "12503",
+    "name": "Merrylands - Guildford",
+    "state": "1",
+    "parentSa4": "125"
+  },
+  {
+    "code": "12504",
+    "name": "Parramatta",
+    "state": "1",
+    "parentSa4": "125"
+  },
+  {
+    "code": "12601",
+    "name": "Pennant Hills - Epping",
+    "state": "1",
+    "parentSa4": "126"
+  },
+  {
+    "code": "12602",
+    "name": "Ryde - Hunters Hill",
+    "state": "1",
+    "parentSa4": "126"
+  },
+  {
+    "code": "12701",
+    "name": "Bringelly - Green Valley",
+    "state": "1",
+    "parentSa4": "127"
+  },
+  {
+    "code": "12702",
+    "name": "Fairfield",
+    "state": "1",
+    "parentSa4": "127"
+  },
+  {
+    "code": "12703",
+    "name": "Liverpool",
+    "state": "1",
+    "parentSa4": "127"
+  },
+  {
+    "code": "12801",
+    "name": "Cronulla - Miranda - Caringbah",
+    "state": "1",
+    "parentSa4": "128"
+  },
+  {
+    "code": "12802",
+    "name": "Sutherland - Menai - Heathcote",
+    "state": "1",
+    "parentSa4": "128"
+  },
+  {
+    "code": "20501",
+    "name": "Baw Baw",
+    "state": "2",
+    "parentSa4": "205"
+  },
+  {
+    "code": "20502",
+    "name": "Gippsland - East",
+    "state": "2",
+    "parentSa4": "205"
+  },
+  {
+    "code": "20503",
+    "name": "Gippsland - South West",
+    "state": "2",
+    "parentSa4": "205"
+  },
+  {
+    "code": "20504",
+    "name": "Latrobe Valley",
+    "state": "2",
+    "parentSa4": "205"
+  },
+  {
+    "code": "20505",
+    "name": "Wellington",
+    "state": "2",
+    "parentSa4": "205"
+  },
+  {
+    "code": "20101",
+    "name": "Ballarat",
+    "state": "2",
+    "parentSa4": "201"
+  },
+  {
+    "code": "20102",
+    "name": "Creswick - Daylesford - Ballan",
+    "state": "2",
+    "parentSa4": "201"
+  },
+  {
+    "code": "20103",
+    "name": "Maryborough - Pyrenees",
+    "state": "2",
+    "parentSa4": "201"
+  },
+  {
+    "code": "90101",
+    "name": "Christmas Island",
+    "state": "9",
+    "parentSa4": "901"
+  },
+  {
+    "code": "90102",
+    "name": "Cocos (Keeling) Islands",
+    "state": "9",
+    "parentSa4": "901"
+  },
+  {
+    "code": "90103",
+    "name": "Jervis Bay",
+    "state": "9",
+    "parentSa4": "901"
+  },
+  {
+    "code": "90104",
+    "name": "Norfolk Island",
+    "state": "9",
+    "parentSa4": "901"
+  },
+  {
+    "code": "20201",
+    "name": "Bendigo",
+    "state": "2",
+    "parentSa4": "202"
+  },
+  {
+    "code": "20202",
+    "name": "Heathcote - Castlemaine - Kyneton",
+    "state": "2",
+    "parentSa4": "202"
+  },
+  {
+    "code": "20203",
+    "name": "Loddon - Elmore",
+    "state": "2",
+    "parentSa4": "202"
+  },
+  {
+    "code": "20301",
+    "name": "Barwon - West",
+    "state": "2",
+    "parentSa4": "203"
+  },
+  {
+    "code": "20302",
+    "name": "Geelong",
+    "state": "2",
+    "parentSa4": "203"
+  },
+  {
+    "code": "20303",
+    "name": "Surf Coast - Bellarine Peninsula",
+    "state": "2",
+    "parentSa4": "203"
+  },
+  {
+    "code": "20401",
+    "name": "Upper Goulburn Valley",
+    "state": "2",
+    "parentSa4": "204"
+  },
+  {
+    "code": "20402",
+    "name": "Wangaratta - Benalla",
+    "state": "2",
+    "parentSa4": "204"
+  },
+  {
+    "code": "20403",
+    "name": "Wodonga - Alpine",
+    "state": "2",
+    "parentSa4": "204"
+  },
+  {
+    "code": "20601",
+    "name": "Brunswick - Coburg",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20606",
+    "name": "Stonnington - West",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20607",
+    "name": "Yarra",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20701",
+    "name": "Boroondara",
+    "state": "2",
+    "parentSa4": "207"
+  },
+  {
+    "code": "20702",
+    "name": "Manningham - West",
+    "state": "2",
+    "parentSa4": "207"
+  },
+  {
+    "code": "20602",
+    "name": "Darebin - South",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20703",
+    "name": "Whitehorse - West",
+    "state": "2",
+    "parentSa4": "207"
+  },
+  {
+    "code": "30304",
+    "name": "Nathan",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "20603",
+    "name": "Essendon",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20802",
+    "name": "Glen Eira",
+    "state": "2",
+    "parentSa4": "208"
+  },
+  {
+    "code": "30305",
+    "name": "Rocklea - Acacia Ridge",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "20604",
+    "name": "Melbourne City",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "20904",
+    "name": "Whittlesea - Wallan",
+    "state": "2",
+    "parentSa4": "209"
+  },
+  {
+    "code": "30306",
+    "name": "Sunnybank",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "20605",
+    "name": "Port Phillip",
+    "state": "2",
+    "parentSa4": "206"
+  },
+  {
+    "code": "21205",
+    "name": "Monash",
+    "state": "2",
+    "parentSa4": "212"
+  },
+  {
+    "code": "20801",
+    "name": "Bayside",
+    "state": "2",
+    "parentSa4": "208"
+  },
+  {
+    "code": "20803",
+    "name": "Kingston",
+    "state": "2",
+    "parentSa4": "208"
+  },
+  {
+    "code": "20804",
+    "name": "Stonnington - East",
+    "state": "2",
+    "parentSa4": "208"
+  },
+  {
+    "code": "20901",
+    "name": "Banyule",
+    "state": "2",
+    "parentSa4": "209"
+  },
+  {
+    "code": "30301",
+    "name": "Carindale",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "20902",
+    "name": "Darebin - North",
+    "state": "2",
+    "parentSa4": "209"
+  },
+  {
+    "code": "20903",
+    "name": "Nillumbik - Kinglake",
+    "state": "2",
+    "parentSa4": "209"
+  },
+  {
+    "code": "21001",
+    "name": "Keilor",
+    "state": "2",
+    "parentSa4": "210"
+  },
+  {
+    "code": "21002",
+    "name": "Macedon Ranges",
+    "state": "2",
+    "parentSa4": "210"
+  },
+  {
+    "code": "21003",
+    "name": "Moreland - North",
+    "state": "2",
+    "parentSa4": "210"
+  },
+  {
+    "code": "21004",
+    "name": "Sunbury",
+    "state": "2",
+    "parentSa4": "210"
+  },
+  {
+    "code": "21005",
+    "name": "Tullamarine - Broadmeadows",
+    "state": "2",
+    "parentSa4": "210"
+  },
+  {
+    "code": "21101",
+    "name": "Knox",
+    "state": "2",
+    "parentSa4": "211"
+  },
+  {
+    "code": "21102",
+    "name": "Manningham - East",
+    "state": "2",
+    "parentSa4": "211"
+  },
+  {
+    "code": "21103",
+    "name": "Maroondah",
+    "state": "2",
+    "parentSa4": "211"
+  },
+  {
+    "code": "21104",
+    "name": "Whitehorse - East",
+    "state": "2",
+    "parentSa4": "211"
+  },
+  {
+    "code": "21105",
+    "name": "Yarra Ranges",
+    "state": "2",
+    "parentSa4": "211"
+  },
+  {
+    "code": "21201",
+    "name": "Cardinia",
+    "state": "2",
+    "parentSa4": "212"
+  },
+  {
+    "code": "21202",
+    "name": "Casey - North",
+    "state": "2",
+    "parentSa4": "212"
+  },
+  {
+    "code": "21203",
+    "name": "Casey - South",
+    "state": "2",
+    "parentSa4": "212"
+  },
+  {
+    "code": "21204",
+    "name": "Dandenong",
+    "state": "2",
+    "parentSa4": "212"
+  },
+  {
+    "code": "21301",
+    "name": "Brimbank",
+    "state": "2",
+    "parentSa4": "213"
+  },
+  {
+    "code": "21302",
+    "name": "Hobsons Bay",
+    "state": "2",
+    "parentSa4": "213"
+  },
+  {
+    "code": "21303",
+    "name": "Maribyrnong",
+    "state": "2",
+    "parentSa4": "213"
+  },
+  {
+    "code": "21304",
+    "name": "Melton - Bacchus Marsh",
+    "state": "2",
+    "parentSa4": "213"
+  },
+  {
+    "code": "21305",
+    "name": "Wyndham",
+    "state": "2",
+    "parentSa4": "213"
+  },
+  {
+    "code": "40103",
+    "name": "Burnside",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "21401",
+    "name": "Frankston",
+    "state": "2",
+    "parentSa4": "214"
+  },
+  {
+    "code": "21402",
+    "name": "Mornington Peninsula",
+    "state": "2",
+    "parentSa4": "214"
+  },
+  {
+    "code": "21501",
+    "name": "Grampians",
+    "state": "2",
+    "parentSa4": "215"
+  },
+  {
+    "code": "21502",
+    "name": "Mildura",
+    "state": "2",
+    "parentSa4": "215"
+  },
+  {
+    "code": "21503",
+    "name": "Murray River - Swan Hill",
+    "state": "2",
+    "parentSa4": "215"
+  },
+  {
+    "code": "21601",
+    "name": "Campaspe",
+    "state": "2",
+    "parentSa4": "216"
+  },
+  {
+    "code": "21602",
+    "name": "Moira",
+    "state": "2",
+    "parentSa4": "216"
+  },
+  {
+    "code": "21603",
+    "name": "Shepparton",
+    "state": "2",
+    "parentSa4": "216"
+  },
+  {
+    "code": "21701",
+    "name": "Glenelg - Southern Grampians",
+    "state": "2",
+    "parentSa4": "217"
+  },
+  {
+    "code": "21703",
+    "name": "Colac - Corangamite",
+    "state": "2",
+    "parentSa4": "217"
+  },
+  {
+    "code": "21704",
+    "name": "Warrnambool",
+    "state": "2",
+    "parentSa4": "217"
+  },
+  {
+    "code": "30101",
+    "name": "Capalaba",
+    "state": "3",
+    "parentSa4": "301"
+  },
+  {
+    "code": "30102",
+    "name": "Cleveland - Stradbroke",
+    "state": "3",
+    "parentSa4": "301"
+  },
+  {
+    "code": "30103",
+    "name": "Wynnum - Manly",
+    "state": "3",
+    "parentSa4": "301"
+  },
+  {
+    "code": "30201",
+    "name": "Bald Hills - Everton Park",
+    "state": "3",
+    "parentSa4": "302"
+  },
+  {
+    "code": "30202",
+    "name": "Chermside",
+    "state": "3",
+    "parentSa4": "302"
+  },
+  {
+    "code": "30203",
+    "name": "Nundah",
+    "state": "3",
+    "parentSa4": "302"
+  },
+  {
+    "code": "30204",
+    "name": "Sandgate",
+    "state": "3",
+    "parentSa4": "302"
+  },
+  {
+    "code": "30302",
+    "name": "Holland Park - Yeronga",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "30303",
+    "name": "Mt Gravatt",
+    "state": "3",
+    "parentSa4": "303"
+  },
+  {
+    "code": "30401",
+    "name": "Centenary",
+    "state": "3",
+    "parentSa4": "304"
+  },
+  {
+    "code": "30905",
+    "name": "Mudgeeraba - Tallebudgera",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30402",
+    "name": "Kenmore - Brookfield - Moggill",
+    "state": "3",
+    "parentSa4": "304"
+  },
+  {
+    "code": "30403",
+    "name": "Sherwood - Indooroopilly",
+    "state": "3",
+    "parentSa4": "304"
+  },
+  {
+    "code": "30404",
+    "name": "The Gap - Enoggera",
+    "state": "3",
+    "parentSa4": "304"
+  },
+  {
+    "code": "30501",
+    "name": "Brisbane Inner",
+    "state": "3",
+    "parentSa4": "305"
+  },
+  {
+    "code": "30502",
+    "name": "Brisbane Inner - East",
+    "state": "3",
+    "parentSa4": "305"
+  },
+  {
+    "code": "30503",
+    "name": "Brisbane Inner - North",
+    "state": "3",
+    "parentSa4": "305"
+  },
+  {
+    "code": "30504",
+    "name": "Brisbane Inner - West",
+    "state": "3",
+    "parentSa4": "305"
+  },
+  {
+    "code": "30601",
+    "name": "Cairns - North",
+    "state": "3",
+    "parentSa4": "306"
+  },
+  {
+    "code": "30602",
+    "name": "Cairns - South",
+    "state": "3",
+    "parentSa4": "306"
+  },
+  {
+    "code": "30603",
+    "name": "Innisfail - Cassowary Coast",
+    "state": "3",
+    "parentSa4": "306"
+  },
+  {
+    "code": "30604",
+    "name": "Port Douglas - Daintree",
+    "state": "3",
+    "parentSa4": "306"
+  },
+  {
+    "code": "30605",
+    "name": "Tablelands (East) - Kuranda",
+    "state": "3",
+    "parentSa4": "306"
+  },
+  {
+    "code": "30701",
+    "name": "Darling Downs (West) - Maranoa",
+    "state": "3",
+    "parentSa4": "307"
+  },
+  {
+    "code": "30702",
+    "name": "Darling Downs - East",
+    "state": "3",
+    "parentSa4": "307"
+  },
+  {
+    "code": "30703",
+    "name": "Granite Belt",
+    "state": "3",
+    "parentSa4": "307"
+  },
+  {
+    "code": "30801",
+    "name": "Central Highlands (Qld)",
+    "state": "3",
+    "parentSa4": "308"
+  },
+  {
+    "code": "30803",
+    "name": "Rockhampton",
+    "state": "3",
+    "parentSa4": "308"
+  },
+  {
+    "code": "30804",
+    "name": "Biloela",
+    "state": "3",
+    "parentSa4": "308"
+  },
+  {
+    "code": "30805",
+    "name": "Gladstone",
+    "state": "3",
+    "parentSa4": "308"
+  },
+  {
+    "code": "30901",
+    "name": "Broadbeach - Burleigh",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30908",
+    "name": "Robina",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30902",
+    "name": "Coolangatta",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30903",
+    "name": "Gold Coast - North",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30904",
+    "name": "Gold Coast Hinterland",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30906",
+    "name": "Nerang",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30907",
+    "name": "Ormeau - Oxenford",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "30909",
+    "name": "Southport",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "40106",
+    "name": "Prospect - Walkerville",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "30910",
+    "name": "Surfers Paradise",
+    "state": "3",
+    "parentSa4": "309"
+  },
+  {
+    "code": "31001",
+    "name": "Forest Lake - Oxley",
+    "state": "3",
+    "parentSa4": "310"
+  },
+  {
+    "code": "31002",
+    "name": "Ipswich Hinterland",
+    "state": "3",
+    "parentSa4": "310"
+  },
+  {
+    "code": "31003",
+    "name": "Ipswich Inner",
+    "state": "3",
+    "parentSa4": "310"
+  },
+  {
+    "code": "31004",
+    "name": "Springfield - Redbank",
+    "state": "3",
+    "parentSa4": "310"
+  },
+  {
+    "code": "31101",
+    "name": "Beaudesert",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "40107",
+    "name": "Unley",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "40201",
+    "name": "Gawler - Two Wells",
+    "state": "4",
+    "parentSa4": "402"
+  },
+  {
+    "code": "40202",
+    "name": "Playford",
+    "state": "4",
+    "parentSa4": "402"
+  },
+  {
+    "code": "31102",
+    "name": "Beenleigh",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "31106",
+    "name": "Springwood - Kingston",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "31103",
+    "name": "Browns Plains",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "31104",
+    "name": "Jimboomba",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "31201",
+    "name": "Bowen Basin - North",
+    "state": "3",
+    "parentSa4": "312"
+  },
+  {
+    "code": "31202",
+    "name": "Mackay",
+    "state": "3",
+    "parentSa4": "312"
+  },
+  {
+    "code": "31203",
+    "name": "Whitsunday",
+    "state": "3",
+    "parentSa4": "312"
+  },
+  {
+    "code": "31301",
+    "name": "Bribie - Beachmere",
+    "state": "3",
+    "parentSa4": "313"
+  },
+  {
+    "code": "80108",
+    "name": "Weston Creek",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "31105",
+    "name": "Loganlea - Carbrook",
+    "state": "3",
+    "parentSa4": "311"
+  },
+  {
+    "code": "40101",
+    "name": "Adelaide City",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "40102",
+    "name": "Adelaide Hills",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "31302",
+    "name": "Caboolture",
+    "state": "3",
+    "parentSa4": "313"
+  },
+  {
+    "code": "31303",
+    "name": "Caboolture Hinterland",
+    "state": "3",
+    "parentSa4": "313"
+  },
+  {
+    "code": "31304",
+    "name": "Narangba - Burpengary",
+    "state": "3",
+    "parentSa4": "313"
+  },
+  {
+    "code": "31305",
+    "name": "Redcliffe",
+    "state": "3",
+    "parentSa4": "313"
+  },
+  {
+    "code": "31401",
+    "name": "The Hills District",
+    "state": "3",
+    "parentSa4": "314"
+  },
+  {
+    "code": "31402",
+    "name": "North Lakes",
+    "state": "3",
+    "parentSa4": "314"
+  },
+  {
+    "code": "31403",
+    "name": "Strathpine",
+    "state": "3",
+    "parentSa4": "314"
+  },
+  {
+    "code": "31501",
+    "name": "Far North",
+    "state": "3",
+    "parentSa4": "315"
+  },
+  {
+    "code": "31502",
+    "name": "Outback - North",
+    "state": "3",
+    "parentSa4": "315"
+  },
+  {
+    "code": "31503",
+    "name": "Outback - South",
+    "state": "3",
+    "parentSa4": "315"
+  },
+  {
+    "code": "80109",
+    "name": "Woden Valley",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "31601",
+    "name": "Buderim",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31602",
+    "name": "Caloundra",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31603",
+    "name": "Maroochy",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31605",
+    "name": "Noosa",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31606",
+    "name": "Sunshine Coast Hinterland",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31607",
+    "name": "Nambour",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31608",
+    "name": "Noosa Hinterland",
+    "state": "3",
+    "parentSa4": "316"
+  },
+  {
+    "code": "31701",
+    "name": "Toowoomba",
+    "state": "3",
+    "parentSa4": "317"
+  },
+  {
+    "code": "31801",
+    "name": "Charters Towers - Ayr - Ingham",
+    "state": "3",
+    "parentSa4": "318"
+  },
+  {
+    "code": "31802",
+    "name": "Townsville",
+    "state": "3",
+    "parentSa4": "318"
+  },
+  {
+    "code": "31901",
+    "name": "Bundaberg",
+    "state": "3",
+    "parentSa4": "319"
+  },
+  {
+    "code": "31902",
+    "name": "Burnett",
+    "state": "3",
+    "parentSa4": "319"
+  },
+  {
+    "code": "31903",
+    "name": "Gympie - Cooloola",
+    "state": "3",
+    "parentSa4": "319"
+  },
+  {
+    "code": "31904",
+    "name": "Hervey Bay",
+    "state": "3",
+    "parentSa4": "319"
+  },
+  {
+    "code": "31905",
+    "name": "Maryborough",
+    "state": "3",
+    "parentSa4": "319"
+  },
+  {
+    "code": "40104",
+    "name": "Campbelltown (SA)",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "40105",
+    "name": "Norwood - Payneham - St Peters",
+    "state": "4",
+    "parentSa4": "401"
+  },
+  {
+    "code": "40203",
+    "name": "Port Adelaide - East",
+    "state": "4",
+    "parentSa4": "402"
+  },
+  {
+    "code": "40301",
+    "name": "Holdfast Bay",
+    "state": "4",
+    "parentSa4": "403"
+  },
+  {
+    "code": "40204",
+    "name": "Salisbury",
+    "state": "4",
+    "parentSa4": "402"
+  },
+  {
+    "code": "50103",
+    "name": "Manjimup",
+    "state": "5",
+    "parentSa4": "501"
+  },
+  {
+    "code": "50201",
+    "name": "Mandurah",
+    "state": "5",
+    "parentSa4": "502"
+  },
+  {
+    "code": "50301",
+    "name": "Cottesloe - Claremont",
+    "state": "5",
+    "parentSa4": "503"
+  },
+  {
+    "code": "50302",
+    "name": "Perth City",
+    "state": "5",
+    "parentSa4": "503"
+  },
+  {
+    "code": "50401",
+    "name": "Bayswater - Bassendean",
+    "state": "5",
+    "parentSa4": "504"
+  },
+  {
+    "code": "50402",
+    "name": "Mundaring",
+    "state": "5",
+    "parentSa4": "504"
+  },
+  {
+    "code": "40205",
+    "name": "Tea Tree Gully",
+    "state": "4",
+    "parentSa4": "402"
+  },
+  {
+    "code": "50403",
+    "name": "Swan",
+    "state": "5",
+    "parentSa4": "504"
+  },
+  {
+    "code": "50501",
+    "name": "Joondalup",
+    "state": "5",
+    "parentSa4": "505"
+  },
+  {
+    "code": "40302",
+    "name": "Marion",
+    "state": "4",
+    "parentSa4": "403"
+  },
+  {
+    "code": "40303",
+    "name": "Mitcham",
+    "state": "4",
+    "parentSa4": "403"
+  },
+  {
+    "code": "40304",
+    "name": "Onkaparinga",
+    "state": "4",
+    "parentSa4": "403"
+  },
+  {
+    "code": "51104",
+    "name": "Mid West",
+    "state": "5",
+    "parentSa4": "511"
+  },
+  {
+    "code": "60101",
+    "name": "Brighton",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60102",
+    "name": "Hobart - North East",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60103",
+    "name": "Hobart - North West",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60104",
+    "name": "Hobart - South and West",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60105",
+    "name": "Hobart Inner",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60106",
+    "name": "Sorell - Dodges Ferry",
+    "state": "6",
+    "parentSa4": "601"
+  },
+  {
+    "code": "60201",
+    "name": "Launceston",
+    "state": "6",
+    "parentSa4": "602"
+  },
+  {
+    "code": "60202",
+    "name": "Meander Valley - West Tamar",
+    "state": "6",
+    "parentSa4": "602"
+  },
+  {
+    "code": "60203",
+    "name": "North East",
+    "state": "6",
+    "parentSa4": "602"
+  },
+  {
+    "code": "60301",
+    "name": "Central Highlands (Tas.)",
+    "state": "6",
+    "parentSa4": "603"
+  },
+  {
+    "code": "60302",
+    "name": "Huon - Bruny Island",
+    "state": "6",
+    "parentSa4": "603"
+  },
+  {
+    "code": "60303",
+    "name": "South East Coast",
+    "state": "6",
+    "parentSa4": "603"
+  },
+  {
+    "code": "60401",
+    "name": "Burnie - Ulverstone",
+    "state": "6",
+    "parentSa4": "604"
+  },
+  {
+    "code": "60402",
+    "name": "Devonport",
+    "state": "6",
+    "parentSa4": "604"
+  },
+  {
+    "code": "60403",
+    "name": "West Coast",
+    "state": "6",
+    "parentSa4": "604"
+  },
+  {
+    "code": "40401",
+    "name": "Charles Sturt",
+    "state": "4",
+    "parentSa4": "404"
+  },
+  {
+    "code": "40402",
+    "name": "Port Adelaide - West",
+    "state": "4",
+    "parentSa4": "404"
+  },
+  {
+    "code": "70101",
+    "name": "Darwin City",
+    "state": "7",
+    "parentSa4": "701"
+  },
+  {
+    "code": "40403",
+    "name": "West Torrens",
+    "state": "4",
+    "parentSa4": "404"
+  },
+  {
+    "code": "40501",
+    "name": "Barossa",
+    "state": "4",
+    "parentSa4": "405"
+  },
+  {
+    "code": "40502",
+    "name": "Lower North",
+    "state": "4",
+    "parentSa4": "405"
+  },
+  {
+    "code": "40503",
+    "name": "Mid North",
+    "state": "4",
+    "parentSa4": "405"
+  },
+  {
+    "code": "40504",
+    "name": "Yorke Peninsula",
+    "state": "4",
+    "parentSa4": "405"
+  },
+  {
+    "code": "40601",
+    "name": "Eyre Peninsula and South West",
+    "state": "4",
+    "parentSa4": "406"
+  },
+  {
+    "code": "40602",
+    "name": "Outback - North and East",
+    "state": "4",
+    "parentSa4": "406"
+  },
+  {
+    "code": "40701",
+    "name": "Fleurieu - Kangaroo Island",
+    "state": "4",
+    "parentSa4": "407"
+  },
+  {
+    "code": "40702",
+    "name": "Limestone Coast",
+    "state": "4",
+    "parentSa4": "407"
+  },
+  {
+    "code": "40703",
+    "name": "Murray and Mallee",
+    "state": "4",
+    "parentSa4": "407"
+  },
+  {
+    "code": "50101",
+    "name": "Augusta - Margaret River - Busselton",
+    "state": "5",
+    "parentSa4": "501"
+  },
+  {
+    "code": "50102",
+    "name": "Bunbury",
+    "state": "5",
+    "parentSa4": "501"
+  },
+  {
+    "code": "50502",
+    "name": "Stirling",
+    "state": "5",
+    "parentSa4": "505"
+  },
+  {
+    "code": "50503",
+    "name": "Wanneroo",
+    "state": "5",
+    "parentSa4": "505"
+  },
+  {
+    "code": "70104",
+    "name": "Palmerston",
+    "state": "7",
+    "parentSa4": "701"
+  },
+  {
+    "code": "50601",
+    "name": "Armadale",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "50602",
+    "name": "Belmont - Victoria Park",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "50603",
+    "name": "Canning",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "50604",
+    "name": "Gosnells",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "50605",
+    "name": "Kalamunda",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "50606",
+    "name": "Serpentine - Jarrahdale",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "80101",
+    "name": "Belconnen",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "50607",
+    "name": "South Perth",
+    "state": "5",
+    "parentSa4": "506"
+  },
+  {
+    "code": "80103",
+    "name": "Canberra East",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "50701",
+    "name": "Cockburn",
+    "state": "5",
+    "parentSa4": "507"
+  },
+  {
+    "code": "50702",
+    "name": "Fremantle",
+    "state": "5",
+    "parentSa4": "507"
+  },
+  {
+    "code": "50703",
+    "name": "Kwinana",
+    "state": "5",
+    "parentSa4": "507"
+  },
+  {
+    "code": "80104",
+    "name": "Gungahlin",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "80105",
+    "name": "North Canberra",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "80106",
+    "name": "South Canberra",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "80107",
+    "name": "Tuggeranong",
+    "state": "8",
+    "parentSa4": "801"
+  },
+  {
+    "code": "50704",
+    "name": "Melville",
+    "state": "5",
+    "parentSa4": "507"
+  },
+  {
+    "code": "50705",
+    "name": "Rockingham",
+    "state": "5",
+    "parentSa4": "507"
+  },
+  {
+    "code": "50901",
+    "name": "Albany",
+    "state": "5",
+    "parentSa4": "509"
+  },
+  {
+    "code": "50902",
+    "name": "Wheat Belt - North",
+    "state": "5",
+    "parentSa4": "509"
+  },
+  {
+    "code": "50903",
+    "name": "Wheat Belt - South",
+    "state": "5",
+    "parentSa4": "509"
+  },
+  {
+    "code": "51001",
+    "name": "Kimberley",
+    "state": "5",
+    "parentSa4": "510"
+  },
+  {
+    "code": "51002",
+    "name": "East Pilbara",
+    "state": "5",
+    "parentSa4": "510"
+  },
+  {
+    "code": "51003",
+    "name": "West Pilbara",
+    "state": "5",
+    "parentSa4": "510"
+  },
+  {
+    "code": "51101",
+    "name": "Esperance",
+    "state": "5",
+    "parentSa4": "511"
+  },
+  {
+    "code": "51102",
+    "name": "Gascoyne",
+    "state": "5",
+    "parentSa4": "511"
+  },
+  {
+    "code": "51103",
+    "name": "Goldfields",
+    "state": "5",
+    "parentSa4": "511"
+  },
+  {
+    "code": "70102",
+    "name": "Darwin Suburbs",
+    "state": "7",
+    "parentSa4": "701"
+  },
+  {
+    "code": "70103",
+    "name": "Litchfield",
+    "state": "7",
+    "parentSa4": "701"
+  },
+  {
+    "code": "70201",
+    "name": "Alice Springs",
+    "state": "7",
+    "parentSa4": "702"
+  },
+  {
+    "code": "70202",
+    "name": "Barkly",
+    "state": "7",
+    "parentSa4": "702"
+  },
+  {
+    "code": "70203",
+    "name": "Daly - Tiwi - West Arnhem",
+    "state": "7",
+    "parentSa4": "702"
+  },
+  {
+    "code": "70204",
+    "name": "East Arnhem",
+    "state": "7",
+    "parentSa4": "702"
+  },
+  {
+    "code": "70205",
+    "name": "Katherine",
+    "state": "7",
+    "parentSa4": "702"
+  }
+]

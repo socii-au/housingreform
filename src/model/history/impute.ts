@@ -139,7 +139,15 @@ export function imputeHistoryBundle(opts: { bundle: HistoryBundle; cities: CityB
   const cityById = new Map<CityId, CityBaseState>();
   cities.forEach((c) => cityById.set(c.cityId, c));
 
-  const next: HistoryBundle = JSON.parse(JSON.stringify(bundle));
+  // Clone defensively (strip prototypes) and avoid mutating the input bundle.
+  const next: HistoryBundle = (() => {
+    try {
+      if (typeof structuredClone === "function") return (structuredClone as typeof globalThis.structuredClone)(bundle);
+    } catch {
+      // ignore
+    }
+    return JSON.parse(JSON.stringify(bundle)) as HistoryBundle;
+  })();
   next.meta.notes = next.meta.notes.slice();
   next.meta.warnings = next.meta.warnings.slice();
 

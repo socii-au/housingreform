@@ -102,7 +102,9 @@ export function ControlsPanel() {
     selectState,
     selectCity,
     applyPreset,
+    togglePreset,
     presetId,
+    selectedPresets,
     resetToDefaults,
     includeAllCities,
     toggleCityCoverage,
@@ -151,29 +153,159 @@ export function ControlsPanel() {
       {/* Scenario & Scope */}
       <ControlGroup title="Scenario & Scope" icon="🎯" defaultOpen={true}>
         <div className="field">
-          <label className="field-label">Preset</label>
-          <select
-            value={presetId}
-            onChange={(e) => applyPreset(e.target.value)}
-            className="select-field"
-          >
-            <option value="baseline">📊 Baseline</option>
-            <option value="custom">⚙️ Custom</option>
-            <optgroup label="Reforms">
-              <option value="ng-remove">🔧 NG removal</option>
-              <option value="ownership-cap">🏠 Ownership cap</option>
-              <option value="supply-boost">🏗️ Supply +20%</option>
-              <option value="comprehensive">📦 Comprehensive</option>
-            </optgroup>
-            <optgroup label="Expert (proxy) presets">
-              <option value="land-tax-transition">🧾 Land tax transition</option>
-              <option value="macroprudential-tightening">🏦 Macroprudential tightening</option>
-              <option value="short-stay-clampdown">🛏️ Short-stay clampdown</option>
-              <option value="public-housing-build">🏘️ Public housing build</option>
-              <option value="migration-shock-down">🧳 Migration shock (lower)</option>
-              <option value="all-levers">🧪 All levers (stress test)</option>
-            </optgroup>
-          </select>
+          <label className="field-label">Policy Scenarios (multi-select)</label>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>
+            Select multiple scenarios to stack their effects. Effects combine additively where applicable.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {/* Baseline */}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={selectedPresets.includes("baseline")}
+                onChange={() => togglePreset("baseline")}
+                style={{ cursor: "pointer" }}
+              />
+              <span>📊 Baseline (No Change)</span>
+            </label>
+
+            {/* Reforms */}
+            <div style={{ marginTop: 4, paddingLeft: 20, borderLeft: "2px solid var(--border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
+                Reforms
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("ng-remove")}
+                  onChange={() => togglePreset("ng-remove")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🔧 Remove Negative Gearing</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("ng-remove-fast")}
+                  onChange={() => togglePreset("ng-remove-fast")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>⚡ Remove NG (Immediate)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("ng-restore")}
+                  onChange={() => togglePreset("ng-restore")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>↩️ Restore Negative Gearing</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("ownership-cap")}
+                  onChange={() => togglePreset("ownership-cap")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🏠 Ownership Cap (1 PPOR + 1 IP)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("ownership-cap-aggressive")}
+                  onChange={() => togglePreset("ownership-cap-aggressive")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>⚔️ Ownership Cap (Aggressive)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("supply-boost")}
+                  onChange={() => togglePreset("supply-boost")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🏗️ Supply Boost +20%</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("comprehensive")}
+                  onChange={() => togglePreset("comprehensive")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>📦 Comprehensive Reform</span>
+              </label>
+            </div>
+
+            {/* Expert presets */}
+            <div style={{ marginTop: 4, paddingLeft: 20, borderLeft: "2px solid var(--border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
+                Expert Presets
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("land-tax-transition")}
+                  onChange={() => togglePreset("land-tax-transition")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🧾 Land Tax Transition</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("macroprudential-tightening")}
+                  onChange={() => togglePreset("macroprudential-tightening")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🏦 Macroprudential Tightening</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("short-stay-clampdown")}
+                  onChange={() => togglePreset("short-stay-clampdown")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🛏️ Short-Stay Clampdown</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("public-housing-build")}
+                  onChange={() => togglePreset("public-housing-build")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🏘️ Public Housing Build</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("migration-shock-down")}
+                  onChange={() => togglePreset("migration-shock-down")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🧳 Migration Shock (Lower)</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("all-levers")}
+                  onChange={() => togglePreset("all-levers")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🧪 All Levers (Stress Test)</span>
+              </label>
+            </div>
+
+            {selectedPresets.length > 1 && (
+              <div style={{ marginTop: 8, padding: 8, background: "var(--accent-light)", borderRadius: 6, fontSize: 11 }}>
+                <strong>Stacking {selectedPresets.length} scenarios:</strong> Effects combine additively (supply/demand) or use maximum (restrictions).
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="field">

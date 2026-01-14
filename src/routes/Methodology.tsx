@@ -2,6 +2,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import methodologyMd from "../content/methodology.md?raw";
 
+function safeUri(uri: string): string {
+  const u = (uri ?? "").trim();
+  // Block javascript: and data: by default. Allow relative and http(s).
+  if (/^javascript:/i.test(u)) return "";
+  if (/^data:/i.test(u)) return "";
+  return u;
+}
+
 function downloadText(filename: string, text: string) {
   const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -40,7 +48,22 @@ export function Methodology() {
       </div>
 
       <div className="card" style={{ padding: 16 }}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{methodologyMd}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          skipHtml
+          components={{
+            a: ({ node, href, ...props }) => {
+              const safe = safeUri(href ?? "");
+              return <a {...props} href={safe} target="_blank" rel="noopener noreferrer" />;
+            },
+            img: ({ node, src, ...props }) => {
+              const safe = safeUri(src ?? "");
+              return <img {...props} src={safe} />;
+            },
+          }}
+        >
+          {methodologyMd}
+        </ReactMarkdown>
       </div>
     </div>
   );

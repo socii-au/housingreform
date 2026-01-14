@@ -85,15 +85,18 @@ function classifyTenure(raw: unknown): TenureType | null {
 }
 
 function buildTenureMapFromSample(values: unknown[]): Record<string, TenureType> {
-  const out: Record<string, TenureType> = {};
+  const out: Record<string, TenureType> = Object.create(null);
   values.forEach((v) => {
     const s = asString(v);
     if (!s) return;
+    // Prevent prototype pollution keys
+    if (s === "__proto__" || s === "constructor" || s === "prototype") return;
     const t = classifyTenure(s);
     if (!t) return;
     // Map both raw and lowercased to increase hit rate.
     out[s] = t;
-    out[s.toLowerCase()] = t;
+    const low = s.toLowerCase();
+    if (low !== "__proto__" && low !== "constructor" && low !== "prototype") out[low] = t;
   });
 
   // Always include the canonical compact mapping.
@@ -164,7 +167,7 @@ export function autodetectMicrodataSchema(rows: RecordLike[]): AutodetectResult 
   const income = incomeKey ? evaluateIncomeColumn(rows, incomeKey) : { ok: false, conf: 0 };
   const tenureEval = tenureKey
     ? evaluateTenureColumn(rows, tenureKey)
-    : { ok: false, conf: 0, tenureMap: { R: "renter", M: "mortgaged", O: "outright", I: "investor" } };
+    : { ok: false, conf: 0, tenureMap: { R: "renter" as TenureType, M: "mortgaged" as TenureType, O: "outright" as TenureType, I: "investor" as TenureType } };
   const weight = weightKey ? evaluateWeightColumn(rows, weightKey) : { ok: false, conf: 0 };
 
   if (incomeKey && income.note) notes.push(income.note);

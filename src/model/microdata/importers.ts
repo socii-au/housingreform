@@ -61,12 +61,13 @@ export function fromABS(opts: {
   fields: FieldMapping;
   tenure: TenureMapping;
 }): { byCity: Partial<Record<CityId, MicroRecord[]>>; dropped: Record<CityId, number> } {
-  const out: Partial<Record<CityId, MicroRecord[]>> = {};
+  const out: Partial<Record<CityId, MicroRecord[]>> = Object.create(null);
   const dropped: Record<CityId, number> = {} as Record<CityId, number>;
   const map = buildMapper({ fields: opts.fields, tenure: opts.tenure });
 
   Object.entries(opts.byCity).forEach(([k, rows]) => {
     const city = k as CityId;
+    if (k === "__proto__" || k === "constructor" || k === "prototype") return;
     if (!rows) return;
     const kept: MicroRecord[] = [];
     let drop = 0;

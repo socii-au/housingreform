@@ -11,6 +11,7 @@ import { HelpExpander } from "../components/shared/HelpText";
 import { listAtBounds, listCalibrationFirstActive, toPolicyV2 } from "../model/policyRegistry";
 import { buildRegionTimeline } from "../model/history/timeline";
 import { resolveMethodology } from "../model/methodology";
+import { sanitizeHistoryBundleWithReport } from "../security/sanitize";
 
 function MicrodataWarningsBanner({ params }: { params: ReturnType<typeof useModel>["params"] }) {
   const micro = params.advanced?.microDistributions;
@@ -159,6 +160,40 @@ function HistoryWarningsBanner({
   );
 }
 
+function SanitizationBanner({ params }: { params: ReturnType<typeof useModel>["params"] }) {
+  const msgs: string[] = [];
+
+  const microMeta = (params.advanced?.microDistributions as any)?.microdata?.meta as any;
+  const m = microMeta?.sanitization;
+  if (m && (m.droppedCityKeys || m.droppedRows || m.truncatedRows)) {
+    msgs.push(
+      `Microdata sanitized: dropped ${m.droppedCityKeys} invalid city keys, dropped ${m.droppedRows} non-object rows, truncated ${m.truncatedRows} rows (cap ${m.maxRowsPerCity}/city).`
+    );
+  }
+
+  const hb = params.advanced?.calibration?.historyBundle as any;
+  if (hb) {
+    const rep = sanitizeHistoryBundleWithReport(hb).report;
+    if (rep.ok && (rep.droppedCityKeys || rep.cappedPoints)) {
+      msgs.push(
+        `History bundle sanitized: dropped ${rep.droppedCityKeys} invalid city keys, capped ${rep.cappedPoints} year-points (max ${rep.maxYears} years).`
+      );
+    }
+  }
+
+  if (msgs.length === 0) return null;
+  return (
+    <div className="callout warning" style={{ marginBottom: 12 }}>
+      <div style={{ fontWeight: 800, marginBottom: 4 }}>Input sanitization applied</div>
+      <ul style={{ margin: "8px 0 0 18px", fontSize: 13 }}>
+        {msgs.map((m, i) => (
+          <li key={i}>{m}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function ExploreModel() {
   const {
     scope,
@@ -236,6 +271,7 @@ export function ExploreModel() {
         </div>
 
         <CalibrationWarningsBanner params={params} calibrationReport={calibrationReport} />
+        <SanitizationBanner params={params} />
         <HistoryWarningsBanner params={params} />
         <MicrodataWarningsBanner params={params} />
 

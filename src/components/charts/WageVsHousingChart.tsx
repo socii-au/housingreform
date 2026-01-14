@@ -45,6 +45,10 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
   const first = years[0];
   const last = years[years.length - 1];
 
+  if (!first || !last) {
+    return <div className="card">No data available</div>;
+  }
+
   // Calculate growth rates
   const priceGrowth = ((last.priceIndex ?? 100) - 100) / 100;
   const rentGrowth = ((last.rentIndex ?? 100) - 100) / 100;
@@ -89,17 +93,17 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
         <div className="metric-card" style={{ background: "#fef3c7", borderColor: "#fbbf24" }}>
           <span className="metric-label">Wages</span>
           <span className="metric-value" style={{ color: "#b45309" }}>{fmtPct(wageGrowth)}</span>
-          <span className="metric-sub">{fmtCurrency(first.medianAnnualWage)} → {fmtCurrency(last.medianAnnualWage)}</span>
+          <span className="metric-sub">{fmtCurrency(first.medianAnnualWage ?? 0)} → {fmtCurrency(last.medianAnnualWage ?? 0)}</span>
         </div>
         <div className="metric-card" style={{ background: "#fee2e2", borderColor: "#f87171" }}>
           <span className="metric-label">Prices</span>
           <span className="metric-value" style={{ color: "#dc2626" }}>{fmtPct(priceGrowth)}</span>
-          <span className="metric-sub">{fmtCurrency(first.medianPrice)} → {fmtCurrency(last.medianPrice)}</span>
+          <span className="metric-sub">{fmtCurrency(first.medianPrice ?? 0)} → {fmtCurrency(last.medianPrice ?? 0)}</span>
         </div>
         <div className="metric-card" style={{ background: "#dbeafe", borderColor: "#60a5fa" }}>
           <span className="metric-label">Rents</span>
           <span className="metric-value" style={{ color: "#2563eb" }}>{fmtPct(rentGrowth)}</span>
-          <span className="metric-sub">{fmtCurrency(first.medianAnnualRent)}/yr → {fmtCurrency(last.medianAnnualRent)}/yr</span>
+          <span className="metric-sub">{fmtCurrency(first.medianAnnualRent ?? 0)}/yr → {fmtCurrency(last.medianAnnualRent ?? 0)}/yr</span>
         </div>
       </div>
 
@@ -266,7 +270,7 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
         </div>
       </div>
 
-      <HelpExpander title="How to interpret this chart">
+      <HelpExpander summary="How to interpret this chart">
         <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", lineHeight: 1.6 }}>
           <li><strong>Wage line (gold):</strong> Shows how median full-time wages grow over time</li>
           <li><strong>Price line (red):</strong> Shows housing price growth — if above wage line, affordability is worsening</li>
@@ -276,7 +280,7 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
         </ul>
       </HelpExpander>
 
-      <HelpExpander title="Understanding the affordability gap">
+      <HelpExpander summary="Understanding the affordability gap">
         <p style={{ margin: "0 0 8px", fontSize: "13px" }}>
           When housing prices or rents grow faster than wages, each generation finds it harder to afford housing. 
           A positive gap means housing costs are pulling away from incomes.

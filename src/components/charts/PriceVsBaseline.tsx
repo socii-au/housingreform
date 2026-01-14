@@ -63,8 +63,10 @@ export function PriceVsBaseline({
 
   const first = indexed[0];
   const last = indexed[indexed.length - 1];
-  const totalChange = last ? (last.value - first.value) / first.value : 0;
-  const avgAnnualChange = last && last.year > first.year
+  const totalChange = last && first && first.value != null && last.value != null
+    ? (last.value - first.value) / first.value
+    : 0;
+  const avgAnnualChange = last && first && last.year > first.year && first.value != null && last.value != null
     ? Math.pow(1 + totalChange, 1 / (last.year - first.year)) - 1
     : 0;
 
@@ -98,7 +100,7 @@ export function PriceVsBaseline({
       >
         <div>
           <span className="muted">Start:</span>{" "}
-          <strong>{fmtAUD(first.value)}</strong>
+          <strong>{fmtAUD(first?.value ?? 0)}</strong>
         </div>
         <div>
           <span className="muted">End:</span>{" "}

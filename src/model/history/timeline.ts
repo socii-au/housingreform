@@ -1,5 +1,5 @@
 import type { CityBaseState, CoreConstants, Year } from "../methodology";
-import type { CityId, Scope } from "../regions";
+import type { CityId, Scope, StateId } from "../regions";
 import type { RegionScenarioOutputs, RegionYearState, ScenarioOutputs } from "../runScenario";
 import { computeStampDutyRevenue } from "../methodology";
 import { cityMeta, scopeKey } from "../regions";
@@ -74,9 +74,13 @@ function aggregateHistorical(opts: {
 }): TimelinePoint[] {
   const included = (() => {
     if (opts.scope.level === "national") return opts.cities;
-    if (opts.scope.level === "city") return opts.cities.filter((c) => c.cityId === opts.scope.city);
-    const st = opts.scope.state;
-    return opts.cities.filter((c) => cityMeta(c.cityId).state === st);
+    if (opts.scope.level === "city") {
+      const cityScope = opts.scope as { level: "city"; city: CityId };
+      return opts.cities.filter((c) => c.cityId === cityScope.city);
+    }
+    // opts.scope.level === "state"
+    const stateScope = opts.scope as { level: "state"; state: StateId };
+    return opts.cities.filter((c) => cityMeta(c.cityId).state === stateScope.state);
   })();
 
   if (included.length === 0) return [];
