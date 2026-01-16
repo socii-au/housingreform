@@ -5,34 +5,10 @@ import type { ScenarioOutputs } from "../model/runScenario";
 import type { ScenarioParams } from "../model/methodology";
 import { computeCrisisScore, crisisColor } from "../model/crisisScore";
 import type { HistoryBundle } from "../model/history/types";
-import {
-  AU_CITY_CATCHMENTS_GEOJSON,
-  AU_STATE_SUBREGIONS_GEOJSON,
-  AU_STATES_GEOJSON,
-  SUBREGION_ANCHOR_BIAS,
-  SUBREGION_WEIGHTS,
-  polygonToPath,
-} from "./maps/auGeo";
 import { sanitizeHistoryBundle } from "../security/sanitize";
-import {
-  SA2_FEATURES,
-  computeSA2CrisisScore,
-  sa2PolygonToPath,
-  type SA2Feature,
-} from "./maps/sa2Data";
-import {
-  SA3_FEATURES,
-  computeSA3CrisisScore,
-  sa3PolygonToPath,
-  STATE_CODE_MAP,
-  type SA3Feature,
-} from "./maps/sa3Data";
-import {
-  SA4_FEATURES,
-  computeSA4CrisisScore,
-  sa4PolygonToPath,
-  type SA4Feature,
-} from "./maps/sa4Data";
+import type { SA2Feature } from "./maps/sa2Data";
+import type { SA3Feature } from "./maps/sa3Data";
+import type { SA4Feature } from "./maps/sa4Data";
 
 type CityPoint = {
   cityId: CityId;
@@ -43,6 +19,11 @@ type CityPoint = {
 };
 
 const VIEW = { w: 1000, h: 760 };
+
+type AuGeoModule = typeof import("./maps/auGeo");
+type Sa2Module = typeof import("./maps/sa2Data");
+type Sa3Module = typeof import("./maps/sa3Data");
+type Sa4Module = typeof import("./maps/sa4Data");
 
 // City markers (hand-tuned, approximate).
 const CITY_POINTS: CityPoint[] = [
@@ -237,11 +218,58 @@ export function AustraliaCrisisMap(props: {
 }) {
   const { outputs, params, year, scope } = props;
   const historyBundle = sanitizeHistoryBundle(props.historyBundle) ?? undefined;
+  const [auGeo, setAuGeo] = useState<AuGeoModule | null>(null);
+  const [sa2Data, setSa2Data] = useState<Sa2Module | null>(null);
+  const [sa3Data, setSa3Data] = useState<Sa3Module | null>(null);
+  const [sa4Data, setSa4Data] = useState<Sa4Module | null>(null);
   const [hoverCity, setHoverCity] = useState<CityId | null>(null);
   const [hoverSA2, setHoverSA2] = useState<SA2Feature | null>(null);
   const [hoverSA3, setHoverSA3] = useState<SA3Feature | null>(null);
   const [hoverSA4, setHoverSA4] = useState<SA4Feature | null>(null);
   const [mapLayer, setMapLayer] = useState<MapLayer>("cities"); // Default to Cities layer
+
+  useEffect(() => {
+    let active = true;
+    import("./maps/auGeo").then((m) => {
+      if (active) setAuGeo(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mapLayer !== "sa2" || sa2Data) return;
+    let active = true;
+    import("./maps/sa2Data").then((m) => {
+      if (active) setSa2Data(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [mapLayer, sa2Data]);
+
+  useEffect(() => {
+    if (mapLayer === "cities" || sa3Data) return;
+    let active = true;
+    import("./maps/sa3Data").then((m) => {
+      if (active) setSa3Data(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [mapLayer, sa3Data]);
+
+  useEffect(() => {
+    if (mapLayer !== "sa4" || sa4Data) return;
+    let active = true;
+    import("./maps/sa4Data").then((m) => {
+      if (active) setSa4Data(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [mapLayer, sa4Data]);
 
   const activeCity = scope?.level === "city" ? scope.city : null;
   const activeState =
@@ -253,6 +281,20 @@ export function AustraliaCrisisMap(props: {
   const isStateAllowed = (stateId: StateId) => (!activeState ? true : stateId === activeState);
   const isCityAllowed = (cityId: CityId) =>
     activeCity ? cityId === activeCity : !activeState ? true : cityMeta(cityId).state === activeState;
+
+  const polygonToPath = auGeo?.polygonToPath ?? (() => "");
+  const auStates = auGeo?.AU_STATES_GEOJSON.features ?? [];
+  const auSubregions = auGeo?.AU_STATE_SUBREGIONS_GEOJSON.features ?? [];
+  const cityCatchments = auGeo?.AU_CITY_CATCHMENTS_GEOJSON.features ?? [];
+  const subregionWeights = auGeo?.SUBREGION_WEIGHTS ?? {};
+  const subregionBias = auGeo?.SUBREGION_ANCHOR_BIAS ?? {};
+  const sa2Features = sa2Data?.SA2_FEATURES ?? [];
+  const sa3Features = sa3Data?.SA3_FEATURES ?? [];
+  const sa4Features = sa4Data?.SA4_FEATURES ?? [];
+  const stateCodeMap = sa3Data?.STATE_CODE_MAP ?? ({} as Record<string, StateId>);
+  const sa2PolygonToPath = sa2Data?.sa2PolygonToPath ?? (() => "");
+  const sa3PolygonToPath = sa3Data?.sa3PolygonToPath ?? (() => "");
+  const sa4PolygonToPath = sa4Data?.sa4PolygonToPath ?? (() => "");
 
   // Zoom and pan state
   const [zoom, setZoom] = useState(1);
@@ -343,29 +385,32 @@ export function AustraliaCrisisMap(props: {
   // Compute SA2 crisis scores (most granular)
   const sa2Scores = useMemo(() => {
     const out = new Map<string, number | null>();
-    SA2_FEATURES.forEach((f) => {
-      out.set(f.code, computeSA2CrisisScore(f));
+    if (!sa2Data) return out;
+    sa2Data.SA2_FEATURES.forEach((f) => {
+      out.set(f.code, sa2Data.computeSA2CrisisScore(f));
     });
     return out;
-  }, []);
+  }, [sa2Data]);
 
   // Compute SA3 crisis scores
   const sa3Scores = useMemo(() => {
     const out = new Map<string, number | null>();
-    SA3_FEATURES.forEach((f) => {
-      out.set(f.code, computeSA3CrisisScore(f));
+    if (!sa3Data) return out;
+    sa3Data.SA3_FEATURES.forEach((f) => {
+      out.set(f.code, sa3Data.computeSA3CrisisScore(f));
     });
     return out;
-  }, []);
+  }, [sa3Data]);
 
   // Compute SA4 crisis scores
   const sa4Scores = useMemo(() => {
     const out = new Map<string, number | null>();
-    SA4_FEATURES.forEach((f) => {
-      out.set(f.code, computeSA4CrisisScore(f));
+    if (!sa4Data) return out;
+    sa4Data.SA4_FEATURES.forEach((f) => {
+      out.set(f.code, sa4Data.computeSA4CrisisScore(f));
     });
     return out;
-  }, []);
+  }, [sa4Data]);
 
   const cityScores = useMemo(() => {
     const out: Partial<Record<CityId, ReturnType<typeof computeCrisisScore>>> = {};
@@ -386,14 +431,15 @@ export function AustraliaCrisisMap(props: {
 
   const subregionScores = useMemo(() => {
     const out: Record<string, number | null> = {};
-    AU_STATE_SUBREGIONS_GEOJSON.features.forEach((f) => {
-      const weights = SUBREGION_WEIGHTS[f.properties.id] ?? [];
+    if (!auGeo) return out;
+    auGeo.AU_STATE_SUBREGIONS_GEOJSON.features.forEach((f) => {
+      const weights = auGeo.SUBREGION_WEIGHTS[f.properties.id] ?? [];
       const st = f.properties.state as StateId;
 
       // Baseline: synthetic anchor bias applied to the state score (independent of city availability).
       // If state score is missing, assume neutral 0.50 so the map still renders structure.
       const stateBase = stateScores[st] ?? 0.5;
-      const bias = SUBREGION_ANCHOR_BIAS[f.properties.id] ?? 0;
+      const bias = auGeo.SUBREGION_ANCHOR_BIAS[f.properties.id] ?? 0;
       const anchorScore = clamp01(stateBase + bias);
 
       // Optional refinement: blend toward city-weighted subregion score when enough city signal exists.
@@ -418,17 +464,32 @@ export function AustraliaCrisisMap(props: {
         cityScore == null ? anchorScore : clamp01(lerp(anchorScore, cityScore, trust));
     });
     return out;
-  }, [cityScores, stateScores, params.cities]);
+  }, [auGeo, cityScores, stateScores, params.cities]);
 
   const hoverDetail = hoverCity ? cityScores[hoverCity] : null;
   const hoverSA2Score = hoverSA2 ? sa2Scores.get(hoverSA2.code) : null;
   const hoverSA3Score = hoverSA3 ? sa3Scores.get(hoverSA3.code) : null;
   const hoverSA4Score = hoverSA4 ? sa4Scores.get(hoverSA4.code) : null;
 
-  const catchmentCityIds = useMemo(
-    () => new Set(AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => f.properties.cityId as CityId)),
-    []
-  );
+  const catchmentCityIds = useMemo(() => {
+    if (!auGeo) return new Set<CityId>();
+    return new Set(auGeo.AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => f.properties.cityId as CityId));
+  }, [auGeo]);
+
+  const sa2Count = sa2Features.length;
+  const sa3Count = sa3Features.length;
+  const sa4Count = sa4Features.length;
+
+  if (!auGeo) {
+    return (
+      <div className="card" style={{ padding: 14 }}>
+        <div className="h2" style={{ margin: 0 }}>{props.title ?? "National crisis heatmap"}</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          Loading map data…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card" style={{ padding: 14 }}>
@@ -437,9 +498,9 @@ export function AustraliaCrisisMap(props: {
         <div style={{ display: "flex", gap: 6 }}>
           {(["sa2", "sa3", "sa4", "cities"] as const).map((layer) => {
             const labels: Record<MapLayer, string> = {
-              sa2: `SA2 (${SA2_FEATURES.length})`,
-              sa3: `SA3 (${SA3_FEATURES.length})`,
-              sa4: `SA4 (${SA4_FEATURES.length})`,
+              sa2: sa2Data ? `SA2 (${sa2Count})` : "SA2 (loading)",
+              sa3: sa3Data ? `SA3 (${sa3Count})` : "SA3 (loading)",
+              sa4: sa4Data ? `SA4 (${sa4Count})` : "SA4 (loading)",
               cities: "Cities",
             };
             const isActive = mapLayer === layer;
@@ -467,11 +528,17 @@ export function AustraliaCrisisMap(props: {
       </div>
       <div className="muted" style={{ fontSize: 13, marginBottom: 10 }}>
         {mapLayer === "sa2"
-          ? `Showing ${SA2_FEATURES.length} SA2 statistical areas (most granular) with 2024 baseline data. Hover for details.`
+          ? sa2Data
+            ? `Showing ${sa2Count} SA2 statistical areas (most granular) with 2024 baseline data. Hover for details.`
+            : "Loading SA2 layer…"
           : mapLayer === "sa3"
-            ? `Showing ${SA3_FEATURES.length} SA3 statistical areas (medium detail) with 2024 baseline data. Hover for details.`
+            ? sa3Data
+              ? `Showing ${sa3Count} SA3 statistical areas (medium detail) with 2024 baseline data. Hover for details.`
+              : "Loading SA3 layer…"
             : mapLayer === "sa4"
-              ? `Showing ${SA4_FEATURES.length} SA4 statistical areas (broadest) with 2024 baseline data. Hover for details.`
+              ? sa4Data
+                ? `Showing ${sa4Count} SA4 statistical areas (broadest) with 2024 baseline data. Hover for details.`
+                : "Loading SA4 layer…"
               : "Updates live when you hover across years in the charts. Scoring blends rent burden and price-to-income (shape-first)."}
       </div>
 
@@ -607,7 +674,7 @@ export function AustraliaCrisisMap(props: {
             }}
           >
             <defs>
-              {AU_STATES_GEOJSON.features.map((f) => (
+              {auStates.map((f) => (
                 <clipPath key={f.properties.id} id={`clip-${f.properties.id}`}>
                   <path d={polygonToPath(f.geometry)} />
                 </clipPath>
@@ -618,7 +685,7 @@ export function AustraliaCrisisMap(props: {
             <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
 
             {/* State polygons (base fill) */}
-            {AU_STATES_GEOJSON.features.map((f) => {
+            {auStates.map((f) => {
               const st = f.properties.id as StateId;
               const s = stateScores[st];
               const fill = s == null ? "#e5e7eb" : alphaColor(crisisColor(s), 0.14);
@@ -634,7 +701,7 @@ export function AustraliaCrisisMap(props: {
             })}
 
             {/* Second mesh layer: subregions (coastal/inland/remote) */}
-            {AU_STATE_SUBREGIONS_GEOJSON.features.map((f) => {
+            {auSubregions.map((f) => {
               const id = f.properties.id;
               const st = f.properties.state as StateId;
               if (!isStateAllowed(st)) return null;
@@ -654,9 +721,9 @@ export function AustraliaCrisisMap(props: {
 
             {/* SA2 choropleth layer (when selected - most granular) */}
             {mapLayer === "sa2" &&
-              SA2_FEATURES.map((f) => {
+              sa2Features.map((f) => {
                 const score = sa2Scores.get(f.code);
-                const stateId = STATE_CODE_MAP[f.state as keyof typeof STATE_CODE_MAP] as StateId;
+                const stateId = stateCodeMap[f.state as keyof typeof stateCodeMap] as StateId;
                 if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.65) : "#e5e7eb";
                 const isHover = hoverSA2?.code === f.code;
@@ -679,9 +746,9 @@ export function AustraliaCrisisMap(props: {
 
             {/* SA4 choropleth layer (when selected) */}
             {mapLayer === "sa4" &&
-              SA4_FEATURES.map((f) => {
+              sa4Features.map((f) => {
                 const score = sa4Scores.get(f.code);
-                const stateId = STATE_CODE_MAP[f.state] as StateId;
+                const stateId = stateCodeMap[f.state] as StateId;
                 if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
                 const isHover = hoverSA4?.code === f.code;
@@ -704,9 +771,9 @@ export function AustraliaCrisisMap(props: {
 
             {/* SA3 choropleth layer (when selected) */}
             {mapLayer === "sa3" &&
-              SA3_FEATURES.map((f) => {
+              sa3Features.map((f) => {
                 const score = sa3Scores.get(f.code);
-                const stateId = STATE_CODE_MAP[f.state] as StateId;
+                const stateId = stateCodeMap[f.state] as StateId;
                 if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
                 const isHover = hoverSA3?.code === f.code;
@@ -729,7 +796,7 @@ export function AustraliaCrisisMap(props: {
 
             {/* City catchment mesh (when selected) */}
             {mapLayer === "cities" &&
-              AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => {
+              cityCatchments.map((f) => {
                 const cityId = f.properties.cityId as CityId;
                 const st = f.properties.state as StateId;
                 if (!isCityAllowed(cityId) || !isStateAllowed(st)) return null;
@@ -769,7 +836,7 @@ export function AustraliaCrisisMap(props: {
               })}
 
             {/* State borders on top */}
-            {AU_STATES_GEOJSON.features.map((f) =>
+            {auStates.map((f) =>
               isStateAllowed(f.properties.id as StateId) ? (
                 <path
                   key={`st-b-${f.properties.id}`}
@@ -861,7 +928,7 @@ export function AustraliaCrisisMap(props: {
             {mapLayer === "sa2" && hoverSA2 ? (
               <div style={{ fontSize: 13, lineHeight: 1.45 }}>
                 <div style={{ fontWeight: 900 }}>{hoverSA2.name}</div>
-                <div className="muted">SA2 {hoverSA2.code} • {STATE_CODE_MAP[hoverSA2.state as keyof typeof STATE_CODE_MAP]} • SA3: {hoverSA2.parentSa3}</div>
+                <div className="muted">SA2 {hoverSA2.code} • {stateCodeMap[hoverSA2.state as keyof typeof stateCodeMap]} • SA3: {hoverSA2.parentSa3}</div>
                 {hoverSA2.series2024 && hoverSA2Score != null ? (
                   <>
                     <div style={{ marginTop: 8 }}>
@@ -887,7 +954,7 @@ export function AustraliaCrisisMap(props: {
             ) : mapLayer === "sa4" && hoverSA4 ? (
               <div style={{ fontSize: 13, lineHeight: 1.45 }}>
                 <div style={{ fontWeight: 900 }}>{hoverSA4.name}</div>
-                <div className="muted">SA4 {hoverSA4.code} • {STATE_CODE_MAP[hoverSA4.state]}</div>
+                <div className="muted">SA4 {hoverSA4.code} • {stateCodeMap[hoverSA4.state]}</div>
                 {hoverSA4.series2024 && hoverSA4Score != null ? (
                   <>
                     <div style={{ marginTop: 8 }}>
@@ -913,7 +980,7 @@ export function AustraliaCrisisMap(props: {
             ) : mapLayer === "sa3" && hoverSA3 ? (
               <div style={{ fontSize: 13, lineHeight: 1.45 }}>
                 <div style={{ fontWeight: 900 }}>{hoverSA3.name}</div>
-                <div className="muted">SA3 {hoverSA3.code} • {STATE_CODE_MAP[hoverSA3.state]} • SA4: {hoverSA3.parentSa4}</div>
+                <div className="muted">SA3 {hoverSA3.code} • {stateCodeMap[hoverSA3.state]} • SA4: {hoverSA3.parentSa4}</div>
                 {hoverSA3.series2024 && hoverSA3Score != null ? (
                   <>
                     <div style={{ marginTop: 8 }}>

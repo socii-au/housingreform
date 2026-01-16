@@ -1,10 +1,20 @@
+import { Suspense, lazy } from "react";
 import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { AssumptionsFooter } from "./components/AssumptionsFooter";
 import { ModelProvider, useModel } from "./model/ModelContext";
-import { ExploreModel } from "./routes/ExploreModel";
-import { GuidedStory } from "./routes/GuidedStory";
-import { Methodology } from "./routes/Methodology";
-import { Docs } from "./routes/Docs";
+
+const GuidedStory = lazy(() =>
+  import("./routes/GuidedStory").then((m) => ({ default: m.GuidedStory }))
+);
+const ExploreModel = lazy(() =>
+  import("./routes/ExploreModel").then((m) => ({ default: m.ExploreModel }))
+);
+const Methodology = lazy(() =>
+  import("./routes/Methodology").then((m) => ({ default: m.Methodology }))
+);
+const Docs = lazy(() =>
+  import("./routes/Docs").then((m) => ({ default: m.Docs }))
+);
 
 function Shell() {
   const navigate = useNavigate();
@@ -46,12 +56,14 @@ function Shell() {
 
       <main id="main" className="main">
         <div className="container">
-          <Routes>
-            <Route path="/" element={<GuidedStory />} />
-            <Route path="/explore" element={<ExploreModel />} />
-            <Route path="/methodology" element={<Methodology />} />
-            <Route path="/docs" element={<Docs />} />
-          </Routes>
+          <Suspense fallback={<div className="card">Loading…</div>}>
+            <Routes>
+              <Route path="/" element={<GuidedStory />} />
+              <Route path="/explore" element={<ExploreModel />} />
+              <Route path="/methodology" element={<Methodology />} />
+              <Route path="/docs" element={<Docs />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
 

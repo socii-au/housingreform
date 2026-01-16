@@ -1,11 +1,5 @@
+import { lazy, Suspense } from "react";
 import { ControlsPanel } from "../components/ControlsPanel";
-import { DecileImpact } from "../components/charts/DecileImpact";
-import { DwellingStockArea } from "../components/charts/OwnershipMixArea";
-import { PriceVsBaseline } from "../components/charts/PriceVsBaseline";
-import WageVsHousingChart from "../components/charts/WageVsHousingChart";
-import { AustraliaCrisisMap } from "../components/AustraliaCrisisMap";
-import { PolicyChannelsFlow } from "../components/InvestorFlow";
-import { SummaryCounter } from "../components/PublicHousingCounter";
 import { useModel, scopeLabel } from "../model/ModelContext";
 import { HelpExpander } from "../components/shared/HelpText";
 import { DEFAULT_POLICY_LEVERS_V2, POLICY_PARAMS, listAtBounds, listCalibrationFirstActive, toPolicyV2 } from "../model/policyRegistry";
@@ -21,6 +15,28 @@ import {
   PRESET_PARTIES,
   summarizePartySupport,
 } from "../components/policyParty";
+
+const AustraliaCrisisMap = lazy(() =>
+  import("../components/AustraliaCrisisMap").then((m) => ({ default: m.AustraliaCrisisMap }))
+);
+const PriceVsBaseline = lazy(() =>
+  import("../components/charts/PriceVsBaseline").then((m) => ({ default: m.PriceVsBaseline }))
+);
+const WageVsHousingChart = lazy(() =>
+  import("../components/charts/WageVsHousingChart").then((m) => ({ default: m.default }))
+);
+const DwellingStockArea = lazy(() =>
+  import("../components/charts/OwnershipMixArea").then((m) => ({ default: m.DwellingStockArea }))
+);
+const DecileImpact = lazy(() =>
+  import("../components/charts/DecileImpact").then((m) => ({ default: m.DecileImpact }))
+);
+const PolicyChannelsFlow = lazy(() =>
+  import("../components/InvestorFlow").then((m) => ({ default: m.PolicyChannelsFlow }))
+);
+const SummaryCounter = lazy(() =>
+  import("../components/PublicHousingCounter").then((m) => ({ default: m.SummaryCounter }))
+);
 
 function MicrodataWarningsBanner({ params }: { params: ReturnType<typeof useModel>["params"] }) {
   const micro = params.advanced?.microDistributions;
@@ -95,16 +111,16 @@ type PolicyDifficulty = {
 
 function assessPolicyDifficulty(policy: PolicyLeversV2): PolicyDifficulty {
   let score = 10;
-  const factors = {
+  const factors: PolicyDifficulty["factors"] = {
     federal: [] as string[],
     state: [] as string[],
     industry: [] as string[],
     implementation: [] as string[],
     severity: {
-      federal: "Low" as const,
-      state: "Low" as const,
-      industry: "Low" as const,
-      implementation: "Low" as const,
+      federal: "Low",
+      state: "Low",
+      industry: "Low",
+      implementation: "Low",
     },
   };
 
@@ -209,7 +225,7 @@ function assessPolicyDifficulty(policy: PolicyLeversV2): PolicyDifficulty {
     factors.implementation.push("High enforcement levels can trigger privacy and compliance pushback.");
     factors.implementation.push("Data matching across agencies raises governance and civil‑liberty concerns.");
   }
-  if (policy.negativeGearingMode === "phaseOut" && policy.negativeGearingIntensity > 0.5) {
+  if (policy.negativeGearingMode === "remove" && policy.negativeGearingIntensity > 0.5) {
     score += 6;
     factors.industry.push("Rapid phase‑outs often amplify short‑term political backlash.");
     factors.industry.push("Investor sentiment impacts can become a headline risk.");
@@ -625,51 +641,65 @@ export function ExploreModel() {
         </div>
 
         {/* Regional crisis heatmap (national context, live-updating by hovered year) */}
-        <AustraliaCrisisMap
-          outputs={outputs}
-          params={params as any}
-          year={selectedYear}
-          historyBundle={params.advanced?.calibration?.historyBundle as any}
-          title={`Regional crisis heatmap — ${scopeLabel(scope)}`}
-          scope={scope}
-        />
+        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading map…</div>}>
+          <AustraliaCrisisMap
+            outputs={outputs}
+            params={params as any}
+            year={selectedYear}
+            historyBundle={params.advanced?.calibration?.historyBundle as any}
+            title={`Regional crisis heatmap — ${scopeLabel(scope)}`}
+            scope={scope}
+          />
+        </Suspense>
 
         {/* Primary charts - immediately visible */}
         <div className="chart-grid-primary">
-          <PriceVsBaseline
-            title="Housing prices"
-            series={chartSeries as any}
-            dataKey="medianPrice"
-            baseValue={baseValueForIndex.medianPrice}
-            cutoverYear={cutoverYear}
-            onHoverYear={setFocusYear}
-          />
-          <PriceVsBaseline
-            title="Rents"
-            series={chartSeries as any}
-            dataKey="medianAnnualRent"
-            baseValue={baseValueForIndex.medianAnnualRent}
-            cutoverYear={cutoverYear}
-            onHoverYear={setFocusYear}
-          />
+          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+            <PriceVsBaseline
+              title="Housing prices"
+              series={chartSeries as any}
+              dataKey="medianPrice"
+              baseValue={baseValueForIndex.medianPrice}
+              cutoverYear={cutoverYear}
+              onHoverYear={setFocusYear}
+            />
+          </Suspense>
+          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+            <PriceVsBaseline
+              title="Rents"
+              series={chartSeries as any}
+              dataKey="medianAnnualRent"
+              baseValue={baseValueForIndex.medianAnnualRent}
+              cutoverYear={cutoverYear}
+              onHoverYear={setFocusYear}
+            />
+          </Suspense>
         </div>
 
         {/* Summary metrics */}
-        <SummaryCounter />
+        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading summary…</div>}>
+          <SummaryCounter />
+        </Suspense>
 
         {/* Wage vs Housing comparison */}
-        <WageVsHousingChart
-          years={chartSeries as any}
-          scopeLabel={scopeLabel(scope)}
-          cutoverYear={cutoverYear}
-          onHoverYear={setFocusYear}
-        />
+        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+          <WageVsHousingChart
+            years={chartSeries as any}
+            scopeLabel={scopeLabel(scope)}
+            cutoverYear={cutoverYear}
+            onHoverYear={setFocusYear}
+          />
+        </Suspense>
 
         {/* Secondary charts */}
         <div className="chart-grid-secondary">
-          <DwellingStockArea series={chartSeries as any} onHoverYear={setFocusYear} />
+          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+            <DwellingStockArea series={chartSeries as any} onHoverYear={setFocusYear} />
+          </Suspense>
           {selectedCityData && (
-            <PolicyChannelsFlow series={selectedCityData.years} />
+            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+              <PolicyChannelsFlow series={selectedCityData.years} />
+            </Suspense>
           )}
         </div>
 
@@ -680,7 +710,9 @@ export function ExploreModel() {
               <h2 className="h2" style={{ margin: 0 }}>Distributional impact</h2>
               <span className="badge-warning">Proxy estimate</span>
             </div>
-            <DecileImpact rows={decileRows} />
+            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading distribution…</div>}>
+              <DecileImpact rows={decileRows} />
+            </Suspense>
           </div>
         )}
 

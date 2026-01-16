@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Housing Reform Impact Explorer">
+  <rect width="64" height="64" rx="12" fill="#0b1020"/>
+  <path d="M14 30L32 16l18 14v18a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V30z" fill="#6ee7ff"/>
+  <path d="M26 46V34h12v12" fill="#0b1020"/>
+</svg>

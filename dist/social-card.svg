@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Housing Reform Impact Explorer">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#111b3a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="80" y="80" width="1040" height="470" rx="28" fill="#0f1a3a" stroke="#2a3b6f" stroke-width="3"/>
+  <g fill="#6ee7ff">
+    <path d="M180 340L310 240l130 100v160a12 12 0 0 1-12 12H192a12 12 0 0 1-12-12V340z"/>
+    <path d="M265 512V360h90v152" fill="#0f1a3a"/>
+  </g>
+  <text x="420" y="290" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="700">
+    Housing Reform Impact Explorer
+  </text>
+  <text x="420" y="360" fill="#c7d2fe" font-family="Arial, Helvetica, sans-serif" font-size="28">
+    Scenario-based housing reform model by SOCii
+  </text>
+  <text x="420" y="410" fill="#9aa5c9" font-family="Arial, Helvetica, sans-serif" font-size="22">
+    Free, not-for-profit consumer advocacy & research
+  </text>
+</svg>
