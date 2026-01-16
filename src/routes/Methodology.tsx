@@ -59,9 +59,9 @@ export function Methodology() {
               const safe = safeUri(href ?? "");
               return <a {...props} href={safe} target="_blank" rel="noopener noreferrer" />;
             },
-            img: ({ node, src, ...props }) => {
+            img: ({ src, alt, ...props }) => {
               const safe = safeUri(src ?? "");
-              return <img {...props} src={safe} />;
+              return <img {...props} src={safe} alt={alt ?? ""} loading="lazy" decoding="async" />;
             },
           }}
         >

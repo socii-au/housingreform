@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://housing.socii.au/sitemap.xml
