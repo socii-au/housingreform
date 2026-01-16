@@ -27,6 +27,7 @@ import { reallocateNetMigrationAcrossCities } from "./advanced/spatialEquilibriu
 import { extractCityMicrodata, MicroRecord } from "./advanced/microdata";
 import { clampPolicyV2, toPolicyV2 } from "./policyRegistry";
 import { computePolicyChannelsForCityYear } from "./policies";
+import { computeRatePath, rateDemandMultiplier, resolveBaseRateFromHistory } from "./ratePath";
 
 export interface YearState {
   year: Year;
@@ -39,6 +40,18 @@ export interface YearState {
 
   medianPrice: number;
   medianAnnualRent: number;
+  /** Typical annual insurance premium (ex tax) for a representative household. */
+  insurancePremiumExTax: number;
+  /** Tax/levy component applied to insurance premium. */
+  insurancePremiumTax: number;
+  /** Insurance premium including tax/levy component. */
+  insurancePremiumIncTax: number;
+  /** Nominal insurance growth for the year. */
+  insuranceGrowth: number;
+  /** Cumulative rent paid to date (annual rent summed). */
+  cumulativeRentPaid: number;
+  /** Cumulative insurance paid to date (inc tax). */
+  cumulativeInsurancePaid: number;
 
   wageIndex: number;
   cpiIndex: number;
@@ -66,6 +79,7 @@ export interface YearState {
   affordability: {
     priceToIncomeIndex: number;
     rentToIncomeIndex: number;
+    insuranceToIncomeIndex: number;
     typicalMortgagePayment: number;
     typicalMortgagePaymentShareOfIncome: number;
     typicalRentShareOfIncome: number;
@@ -79,6 +93,7 @@ export interface ScenarioSummary {
   yearN: Year;
   medianPriceChangePct: number;
   medianRentChangePct: number;
+  insurancePremiumChangePct: number;
   medianWageChangePct: number;
   dwellingStockChangePct: number;
   stampDutyRevenueChangePct: number;
@@ -91,6 +106,12 @@ export interface RegionYearState {
   dwellingStock: number;
   medianPrice: number;
   medianAnnualRent: number;
+  insurancePremiumExTax: number;
+  insurancePremiumTax: number;
+  insurancePremiumIncTax: number;
+  insuranceToIncomeIndex: number;
+  cumulativeRentPaid: number;
+  cumulativeInsurancePaid: number;
   stampDutyRevenue: number;
   wageIndex: number;
   /** Actual median annual wage in AUD */
@@ -99,6 +120,7 @@ export interface RegionYearState {
   /** Indexed values for comparison charts (year 0 = 100) */
   priceIndex: number;
   rentIndex: number;
+  insuranceIndex: number;
 }
 
 export interface RegionScenarioOutputs {
@@ -164,6 +186,119 @@ function clamp(x: number, lo: number, hi: number): number {
 function pctChange(from: number, to: number): number {
   if (from === 0) return 0;
   return (to - from) / from;
+}
+
+function defaultInsuranceBases(base: ScenarioParams["cities"][number]): {
+  homeExTax: number;
+  landlordExTax: number;
+} {
+  const homeFallback = Math.max(600, base.medianPrice * 0.0012);
+  const homeExTax = base.annualHomeInsuranceBase ?? homeFallback;
+  const landlordExTax = base.annualLandlordInsuranceBase ?? homeExTax * 1.25;
+  return { homeExTax, landlordExTax };
+}
+
+function computeRentSeries(opts: {
+  base: ScenarioParams["cities"][number];
+  yearIndex: number;
+  prevRent: number;
+  baselineRentGrowth: number;
+  gapRatio: number;
+  investorDemandShock: number;
+  supplyGrowthDelta: number;
+  populationGrowthDelta: number;
+  wageGrowthDelta: number;
+  c: CoreConstants;
+  curves: Curves;
+  rentGrowthModifier: number;
+  rentGrowthCap: number | null;
+  rentRegulationCoverage: number;
+}): {
+  nextRent: number;
+  nominalRentGrowth: number;
+  cappedRentGrowth: number;
+} {
+  const {
+    base,
+    prevRent,
+    baselineRentGrowth,
+    gapRatio,
+    investorDemandShock,
+    supplyGrowthDelta,
+    populationGrowthDelta,
+    wageGrowthDelta,
+    c,
+    curves,
+    rentGrowthModifier,
+    rentGrowthCap,
+    rentRegulationCoverage,
+  } = opts;
+
+  const elasticityInvestor = base.rentElasticityToInvestorDemand ?? 0.25;
+  const elasticitySupply = base.rentElasticityToSupply ?? 0.35;
+  const elasticityPopulation = base.rentElasticityToPopulation ?? 0.30;
+  const elasticityWage = base.rentElasticityToWage ?? 0.15;
+
+  const rentGrowthBaseline =
+    baselineRentGrowth +
+    investorDemandShock * elasticityInvestor -
+    supplyGrowthDelta * elasticitySupply +
+    populationGrowthDelta * elasticityPopulation +
+    wageGrowthDelta * elasticityWage;
+
+  const nominalRentGrowth = computeNominalRentGrowth({
+    baselineRentGrowth: rentGrowthBaseline,
+    gapRatio,
+    c,
+    curves,
+    rentGrowthModifier,
+  });
+
+  const cappedRentGrowth =
+    rentGrowthCap != null && rentRegulationCoverage > 0
+      ? (1 - rentRegulationCoverage) * nominalRentGrowth +
+        rentRegulationCoverage * Math.min(nominalRentGrowth, rentGrowthCap)
+      : nominalRentGrowth;
+
+  return {
+    nextRent: prevRent * (1 + cappedRentGrowth),
+    nominalRentGrowth,
+    cappedRentGrowth,
+  };
+}
+
+function computeInsuranceSeries(opts: {
+  base: ScenarioParams["cities"][number];
+  prevPremiumExTax: number;
+  inflation: number;
+  medianIncomeProxy: number;
+}): {
+  premiumExTax: number;
+  premiumTax: number;
+  premiumIncTax: number;
+  insuranceGrowth: number;
+  insuranceToIncomeIndex: number;
+} {
+  const { base, prevPremiumExTax, inflation, medianIncomeProxy } = opts;
+  const baseInflation = base.insuranceInflationBaseline ?? inflation;
+  const claimsPremium = base.insuranceClaimsInflationPremium ?? 0.01;
+  const climateTrend = base.insuranceClimateTrend ?? 0.003;
+  const climateMultiplier = base.climateRiskMultiplier ?? 1;
+  const insuranceGrowth = baseInflation + claimsPremium + climateTrend * climateMultiplier;
+
+  const premiumExTax = prevPremiumExTax * (1 + insuranceGrowth);
+  const taxRate = base.insuranceTaxRateEffective ?? 0.12;
+  const premiumTax = premiumExTax * Math.max(0, taxRate);
+  const premiumIncTax = premiumExTax + premiumTax;
+  const insuranceToIncomeIndex = premiumIncTax / Math.max(1, medianIncomeProxy);
+
+  return {
+    premiumExTax,
+    premiumTax,
+    premiumIncTax,
+    insuranceGrowth,
+    insuranceToIncomeIndex,
+  };
 }
 
 function syntheticIncomeByDecile(opts: { medianIncome: number }): Record<Decile, number> {
@@ -364,7 +499,19 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
   const BASELINE_NOMINAL_RENT_GROWTH = 0.035;
   const BASELINE_INFLATION = 0.028;
 
-  const st = params.cities.map((base) => ({
+  const st = params.cities.map((base) => {
+    const insuranceBases = defaultInsuranceBases(base);
+    const investorShare = clamp(base.investorDwellingShare, 0, 0.6);
+    const insurancePremiumExTax =
+      insuranceBases.homeExTax * (1 - investorShare) + insuranceBases.landlordExTax * investorShare;
+    const insurancePremiumTax = insurancePremiumExTax * (base.insuranceTaxRateEffective ?? 0.12);
+    const insurancePremiumIncTax = insurancePremiumExTax + insurancePremiumTax;
+    const baseRate = resolveBaseRateFromHistory({
+      historyBundle: params.advanced?.calibration?.historyBundle,
+      fallbackMortgageRate: base.mortgageRate,
+      mortgageSpread: params.ratePath?.mortgageSpread,
+    });
+    return {
     base,
     meta: cityMeta(base.cityId),
     year: base.year0,
@@ -376,10 +523,17 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
     wageIndex: base.wageIndex,
     cpiIndex: base.cpiIndex,
     medianAnnualWage: base.medianAnnualWage ?? 85_000,
-    mortgageRate: Math.max(0, base.mortgageRate + (policy.mortgageRateDelta ?? 0)),
+    mortgageRate: Math.max(0, baseRate + (policy.mortgageRateDelta ?? 0)),
     mortgageTermYears: base.mortgageTermYears,
     lastNominalPriceGrowth: BASELINE_NOMINAL_PRICE_GROWTH,
-  }));
+    insurancePremiumExTax,
+    insurancePremiumTax,
+    insurancePremiumIncTax,
+    cumulativeRentPaid: 0,
+    cumulativeInsurancePaid: 0,
+      baseRate,
+  };
+  });
 
   const yearsByCity: Record<CityId, YearState[]> = {} as Record<CityId, YearState[]>;
   cityIds.forEach((id) => (yearsByCity[id] = []));
@@ -469,7 +623,8 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         investorChannels.investorDemandMultiplier *
         portfolioMult *
         policyChannels.investorDemandMultiplier;
-      demandHouseholds = demandHouseholds * combinedInvestorMult;
+      const rateMult = rateDemandMultiplier({ baseRate: s.baseRate, currentRate: s.mortgageRate });
+      demandHouseholds = demandHouseholds * combinedInvestorMult * rateMult;
 
       const effectiveStockForGap = s.dwellingStock * (1 + investorChannels.divestedDwellingsShare);
       const gapRatio = supplyGapRatio({ demandHouseholds, dwellingStock: effectiveStockForGap });
@@ -477,6 +632,14 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       const wageGrowthBase = base.wageGrowthRate ?? 0.03;
       const wageGrowth = curves.wageGrowth(s.year, wageGrowthBase);
       const inflation = curves.inflation(s.year, BASELINE_INFLATION);
+      s.mortgageRate = computeRatePath({
+        yearIndex: t,
+        prevRate: s.mortgageRate,
+        inflation,
+        outputGap: clamp(gapRatio, -0.05, 0.05),
+        config: params.ratePath ? { ...params.ratePath, baseRate: s.baseRate } : undefined,
+      });
+      s.mortgageRate = Math.max(0, s.mortgageRate + (policy.mortgageRateDelta ?? 0));
       s.wageIndex = s.wageIndex * (1 + wageGrowth);
       s.cpiIndex = s.cpiIndex * (1 + inflation);
       s.medianAnnualWage = s.medianAnnualWage * (1 + wageGrowth);
@@ -487,24 +650,6 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         c,
         curves,
       });
-
-      const rentGapRatio =
-        gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
-      const nominalRentGrowth = computeNominalRentGrowth({
-        baselineRentGrowth: BASELINE_NOMINAL_RENT_GROWTH,
-        gapRatio: rentGapRatio,
-        c,
-        curves,
-        rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
-      });
-      const cappedRentGrowth =
-        policyChannels.rentGrowthCap != null && policyChannels.rentRegulationCoverage > 0
-          ? (1 - policyChannels.rentRegulationCoverage) * nominalRentGrowth +
-            policyChannels.rentRegulationCoverage * Math.min(nominalRentGrowth, policyChannels.rentGrowthCap)
-          : nominalRentGrowth;
-
-      s.medianPrice = s.medianPrice * (1 + nominalPriceGrowth);
-      s.medianAnnualRent = s.medianAnnualRent * (1 + cappedRentGrowth);
 
       const completionsNext = computeCompletionsNextYear({
         baselineCompletions: base.annualCompletions * policyChannels.completionsMultiplier,
@@ -532,6 +677,44 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       const demolitions = s.dwellingStock * Math.max(0, base.demolitionRate);
       s.dwellingStock = Math.max(0, s.dwellingStock + s.completions - demolitions);
 
+      const baselineSupplyGrowthRate =
+        (base.annualCompletions - base.demolitionRate * s.dwellingStock) / Math.max(1, s.dwellingStock);
+      const supplyGrowthRate =
+        (completionsNextCapped - demolitions) / Math.max(1, s.dwellingStock);
+      const supplyGrowthDelta = supplyGrowthRate - baselineSupplyGrowthRate;
+
+      const netMigrationExpected =
+        base.netMigrationPerYear * policyChannels.netMigrationMultiplier + policyChannels.netMigrationAdd;
+      const baselinePopGrowthRate =
+        base.naturalPopGrowthRate + base.netMigrationPerYear / Math.max(1, s.population);
+      const populationGrowthRate =
+        base.naturalPopGrowthRate + netMigrationExpected / Math.max(1, s.population);
+      const populationGrowthDelta = populationGrowthRate - baselinePopGrowthRate;
+      const wageGrowthDelta = wageGrowth - (base.wageGrowthRate ?? 0.03);
+
+      const rentGapRatio =
+        gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
+      const investorDemandShock = clamp(1 - combinedInvestorMult, -0.2, 0.4);
+      const rentResult = computeRentSeries({
+        base,
+        yearIndex: t,
+        prevRent: s.medianAnnualRent,
+        baselineRentGrowth: base.rentGrowthBaseline ?? BASELINE_NOMINAL_RENT_GROWTH,
+        gapRatio: rentGapRatio,
+        investorDemandShock,
+        supplyGrowthDelta,
+        populationGrowthDelta,
+        wageGrowthDelta,
+        c,
+        curves,
+        rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
+        rentGrowthCap: policyChannels.rentGrowthCap,
+        rentRegulationCoverage: policyChannels.rentRegulationCoverage,
+      });
+
+      s.medianPrice = s.medianPrice * (1 + nominalPriceGrowth);
+      s.medianAnnualRent = rentResult.nextRent;
+
       const turnoverRate = Math.max(0.01, Math.min(0.12, c.annualTurnoverRate * policyChannels.turnoverMultiplier));
       const stampDutyRate = Math.max(
         0,
@@ -545,6 +728,18 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       });
 
       const medianIncomeProxy = (s.wageIndex / 100) * 90000;
+      const insurance = computeInsuranceSeries({
+        base,
+        prevPremiumExTax: s.insurancePremiumExTax,
+        inflation,
+        medianIncomeProxy,
+      });
+      s.insurancePremiumExTax = insurance.premiumExTax;
+      s.insurancePremiumTax = insurance.premiumTax;
+      s.insurancePremiumIncTax = insurance.premiumIncTax;
+
+      s.cumulativeRentPaid += s.medianAnnualRent;
+      s.cumulativeInsurancePaid += s.insurancePremiumIncTax;
       const principal = s.medianPrice * c.typicalLVR;
       const typicalMortgagePayment = amortizedAnnualPayment({
         principal,
@@ -554,6 +749,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
 
       const priceToIncomeIndex = s.medianPrice / Math.max(1, medianIncomeProxy);
       const rentToIncomeIndex = s.medianAnnualRent / Math.max(1, medianIncomeProxy);
+      const insuranceToIncomeIndex = s.insurancePremiumIncTax / Math.max(1, medianIncomeProxy);
       const typicalMortgagePaymentShareOfIncome = typicalMortgagePayment / Math.max(1, medianIncomeProxy);
       const typicalRentShareOfIncome = s.medianAnnualRent / Math.max(1, medianIncomeProxy);
 
@@ -586,7 +782,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         demandHouseholds,
         gapRatio,
         nominalPriceGrowth,
-        nominalRentGrowth,
+        nominalRentGrowth: rentResult.nominalRentGrowth,
         stampDutyRevenue,
         policyChannels: {
           investorDemandMultiplier: combinedInvestorMult,
@@ -598,11 +794,18 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         affordability: {
           priceToIncomeIndex,
           rentToIncomeIndex,
+        insuranceToIncomeIndex,
           typicalMortgagePayment,
           typicalMortgagePaymentShareOfIncome,
           typicalRentShareOfIncome,
         },
         deciles,
+      insurancePremiumExTax: s.insurancePremiumExTax,
+      insurancePremiumTax: s.insurancePremiumTax,
+      insurancePremiumIncTax: s.insurancePremiumIncTax,
+      insuranceGrowth: insurance.insuranceGrowth,
+      cumulativeRentPaid: s.cumulativeRentPaid,
+      cumulativeInsurancePaid: s.cumulativeInsurancePaid,
       });
 
       const netMigration = netMigAlloc[base.cityId] ?? base.netMigrationPerYear;
@@ -638,6 +841,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         yearN: last.year,
         medianPriceChangePct: pctChange(first.medianPrice, last.medianPrice),
         medianRentChangePct: pctChange(first.medianAnnualRent, last.medianAnnualRent),
+        insurancePremiumChangePct: pctChange(first.insurancePremiumIncTax, last.insurancePremiumIncTax),
         medianWageChangePct: pctChange(first.medianAnnualWage, last.medianAnnualWage),
         dwellingStockChangePct: pctChange(first.dwellingStock, last.dwellingStock),
         stampDutyRevenueChangePct: pctChange(first.stampDutyRevenue, last.stampDutyRevenue),
@@ -685,6 +889,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
     const basePrice = city.years[0].medianPrice;
     const baseRent = city.years[0].medianAnnualRent;
     const baseWage = city.years[0].medianAnnualWage;
+    const baseInsurance = city.years[0].insurancePremiumIncTax;
     const years: RegionYearState[] = city.years.map((y) => {
       const hci = housingCostIndex({
         medianPrice: y.medianPrice,
@@ -697,12 +902,19 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         dwellingStock: y.dwellingStock,
         medianPrice: y.medianPrice,
         medianAnnualRent: y.medianAnnualRent,
+        insurancePremiumExTax: y.insurancePremiumExTax,
+        insurancePremiumTax: y.insurancePremiumTax,
+        insurancePremiumIncTax: y.insurancePremiumIncTax,
+        insuranceToIncomeIndex: y.affordability.insuranceToIncomeIndex,
+        cumulativeRentPaid: y.cumulativeRentPaid,
+        cumulativeInsurancePaid: y.cumulativeInsurancePaid,
         stampDutyRevenue: y.stampDutyRevenue,
         wageIndex: (y.medianAnnualWage / Math.max(1e-9, baseWage)) * 100,
         medianAnnualWage: y.medianAnnualWage,
         housingCostIndex: hci,
         priceIndex: (y.medianPrice / Math.max(1e-9, basePrice)) * 100,
         rentIndex: (y.medianAnnualRent / Math.max(1e-9, baseRent)) * 100,
+        insuranceIndex: (y.insurancePremiumIncTax / Math.max(1e-9, baseInsurance)) * 100,
       };
     });
 
@@ -718,6 +930,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         yearN: last.year,
         medianPriceChangePct: pctChange(first.medianPrice, last.medianPrice),
         medianRentChangePct: pctChange(first.medianAnnualRent, last.medianAnnualRent),
+        insurancePremiumChangePct: pctChange(first.insurancePremiumIncTax, last.insurancePremiumIncTax),
         medianWageChangePct: pctChange(first.medianAnnualWage, last.medianAnnualWage),
         dwellingStockChangePct: pctChange(first.dwellingStock, last.dwellingStock),
         stampDutyRevenueChangePct: pctChange(first.stampDutyRevenue, last.stampDutyRevenue),
@@ -761,6 +974,10 @@ function aggregateRegion(opts: {
   const basePrice = firstYearCityRows.reduce((acc, r, i) => acc + r.medianPrice * firstYearWNorm[i], 0);
   const baseRent = firstYearCityRows.reduce((acc, r, i) => acc + r.medianAnnualRent * firstYearWNorm[i], 0);
   const baseWage = firstYearCityRows.reduce((acc, r, i) => acc + r.medianAnnualWage * firstYearWNorm[i], 0);
+  const baseInsurance = firstYearCityRows.reduce(
+    (acc, r, i) => acc + r.insurancePremiumIncTax * firstYearWNorm[i],
+    0
+  );
 
   for (let t = 0; t < yearsN; t++) {
     const cityRows = cityIds.map((id) => byCity[id].years[t]);
@@ -785,6 +1002,11 @@ function aggregateRegion(opts: {
     const medianAnnualRent = cityRows.reduce((acc, r, i) => acc + r.medianAnnualRent * wNorm[i], 0);
     const wageIndex = cityRows.reduce((acc, r, i) => acc + r.wageIndex * wNorm[i], 0);
     const medianAnnualWage = cityRows.reduce((acc, r, i) => acc + r.medianAnnualWage * wNorm[i], 0);
+    const insurancePremiumExTax = cityRows.reduce((acc, r, i) => acc + r.insurancePremiumExTax * wNorm[i], 0);
+    const insurancePremiumTax = cityRows.reduce((acc, r, i) => acc + r.insurancePremiumTax * wNorm[i], 0);
+    const insurancePremiumIncTax = cityRows.reduce((acc, r, i) => acc + r.insurancePremiumIncTax * wNorm[i], 0);
+    const cumulativeRentPaid = cityRows.reduce((acc, r, i) => acc + r.cumulativeRentPaid * wNorm[i], 0);
+    const cumulativeInsurancePaid = cityRows.reduce((acc, r, i) => acc + r.cumulativeInsurancePaid * wNorm[i], 0);
 
     const hci = housingCostIndex({ medianPrice, medianAnnualRent, wageIndex });
 
@@ -792,6 +1014,8 @@ function aggregateRegion(opts: {
     const priceIndex = (medianPrice / basePrice) * 100;
     const rentIndex = (medianAnnualRent / baseRent) * 100;
     const wageIdx = (medianAnnualWage / baseWage) * 100;
+    const insuranceIndex = (insurancePremiumIncTax / Math.max(1e-9, baseInsurance)) * 100;
+    const insuranceToIncomeIndex = insurancePremiumIncTax / Math.max(1, medianAnnualWage);
 
     years.push({
       year,
@@ -799,12 +1023,19 @@ function aggregateRegion(opts: {
       dwellingStock,
       medianPrice,
       medianAnnualRent,
+      insurancePremiumExTax,
+      insurancePremiumTax,
+      insurancePremiumIncTax,
+      insuranceToIncomeIndex,
+      cumulativeRentPaid,
+      cumulativeInsurancePaid,
       stampDutyRevenue,
       wageIndex: wageIdx,
       medianAnnualWage,
       housingCostIndex: hci,
       priceIndex,
       rentIndex,
+      insuranceIndex,
     });
   }
 
@@ -816,6 +1047,7 @@ function aggregateRegion(opts: {
     yearN: last.year,
     medianPriceChangePct: pctChange(first.medianPrice, last.medianPrice),
     medianRentChangePct: pctChange(first.medianAnnualRent, last.medianAnnualRent),
+    insurancePremiumChangePct: pctChange(first.insurancePremiumIncTax, last.insurancePremiumIncTax),
     medianWageChangePct: pctChange(first.medianAnnualWage, last.medianAnnualWage),
     dwellingStockChangePct: pctChange(first.dwellingStock, last.dwellingStock),
     stampDutyRevenueChangePct: pctChange(first.stampDutyRevenue, last.stampDutyRevenue),
@@ -856,7 +1088,8 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
   };
 
   const BASELINE_NOMINAL_PRICE_GROWTH = estimateAvgLogGrowth(hist?.medianPrice) ?? 0.04;
-  const BASELINE_NOMINAL_RENT_GROWTH = estimateAvgLogGrowth(hist?.medianAnnualRent) ?? 0.035;
+  const BASELINE_NOMINAL_RENT_GROWTH =
+    base.rentGrowthBaseline ?? estimateAvgLogGrowth(hist?.medianAnnualRent) ?? 0.035;
   // Use city-specific wage growth rate if available
   const BASELINE_WAGE_GROWTH = estimateAvgLogGrowth(hist?.medianAnnualWage) ?? base.wageGrowthRate ?? 0.03;
   const BASELINE_INFLATION = 0.028;
@@ -876,10 +1109,24 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
   // Track actual wage starting from city's baseline
   let medianAnnualWage = base.medianAnnualWage ?? 85_000;
 
-  let mortgageRate = Math.max(0, base.mortgageRate + (policy.mortgageRateDelta ?? 0));
+  const baseRate = resolveBaseRateFromHistory({
+    historyBundle: params.advanced?.calibration?.historyBundle,
+    fallbackMortgageRate: base.mortgageRate,
+    mortgageSpread: params.ratePath?.mortgageSpread,
+  });
+  let mortgageRate = Math.max(0, baseRate + (policy.mortgageRateDelta ?? 0));
   const mortgageTermYears = base.mortgageTermYears;
 
   const hci0 = housingCostIndex({ medianPrice, medianAnnualRent, wageIndex });
+
+  const insuranceBases = defaultInsuranceBases(base);
+  const investorShare = clamp(base.investorDwellingShare, 0, 0.6);
+  let insurancePremiumExTax =
+    insuranceBases.homeExTax * (1 - investorShare) + insuranceBases.landlordExTax * investorShare;
+  let insurancePremiumTax = insurancePremiumExTax * (base.insuranceTaxRateEffective ?? 0.12);
+  let insurancePremiumIncTax = insurancePremiumExTax + insurancePremiumTax;
+  let cumulativeRentPaid = 0;
+  let cumulativeInsurancePaid = 0;
 
   for (let i = 0; i < params.years; i++) {
     const households = householdsFromPopulation(population, c);
@@ -902,14 +1149,24 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       dwellingStock,
     });
 
-    demandHouseholds =
-      demandHouseholds * investorChannels.investorDemandMultiplier * policyChannels.investorDemandMultiplier;
+    const combinedInvestorMult =
+      investorChannels.investorDemandMultiplier * policyChannels.investorDemandMultiplier;
+    const rateMult = rateDemandMultiplier({ baseRate, currentRate: mortgageRate });
+    demandHouseholds = demandHouseholds * combinedInvestorMult * rateMult;
 
     const effectiveStockForGap = dwellingStock * (1 + investorChannels.divestedDwellingsShare);
     const gapRatio = supplyGapRatio({ demandHouseholds, dwellingStock: effectiveStockForGap });
 
     const wageGrowth = curves.wageGrowth(year, BASELINE_WAGE_GROWTH);
     const inflation = curves.inflation(year, BASELINE_INFLATION);
+    mortgageRate = computeRatePath({
+      yearIndex: i,
+      prevRate: mortgageRate,
+      inflation,
+      outputGap: clamp(gapRatio, -0.05, 0.05),
+      config: params.ratePath ? { ...params.ratePath, baseRate } : undefined,
+    });
+    mortgageRate = Math.max(0, mortgageRate + (policy.mortgageRateDelta ?? 0));
     wageIndex = wageIndex * (1 + wageGrowth);
     cpiIndex = cpiIndex * (1 + inflation);
     medianAnnualWage = medianAnnualWage * (1 + wageGrowth);
@@ -920,25 +1177,6 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       c,
       curves,
     });
-
-    const rentGapRatio =
-      gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
-
-    const nominalRentGrowth = computeNominalRentGrowth({
-      baselineRentGrowth: BASELINE_NOMINAL_RENT_GROWTH,
-      gapRatio: rentGapRatio,
-      c,
-      curves,
-      rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
-    });
-    const cappedRentGrowth =
-      policyChannels.rentGrowthCap != null && policyChannels.rentRegulationCoverage > 0
-        ? (1 - policyChannels.rentRegulationCoverage) * nominalRentGrowth +
-          policyChannels.rentRegulationCoverage * Math.min(nominalRentGrowth, policyChannels.rentGrowthCap)
-        : nominalRentGrowth;
-
-    medianPrice = medianPrice * (1 + nominalPriceGrowth);
-    medianAnnualRent = medianAnnualRent * (1 + cappedRentGrowth);
 
     const completionsNext = computeCompletionsNextYear({
       baselineCompletions: base.annualCompletions * policyChannels.completionsMultiplier,
@@ -966,6 +1204,44 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
     const demolitions = dwellingStock * Math.max(0, base.demolitionRate);
     dwellingStock = Math.max(0, dwellingStock + completions - demolitions);
 
+    const baselineSupplyGrowthRate =
+      (base.annualCompletions - base.demolitionRate * dwellingStock) / Math.max(1, dwellingStock);
+    const supplyGrowthRate =
+      (completionsNextCapped - demolitions) / Math.max(1, dwellingStock);
+    const supplyGrowthDelta = supplyGrowthRate - baselineSupplyGrowthRate;
+
+    const netMigrationExpected =
+      base.netMigrationPerYear * policyChannels.netMigrationMultiplier + policyChannels.netMigrationAdd;
+    const baselinePopGrowthRate =
+      base.naturalPopGrowthRate + base.netMigrationPerYear / Math.max(1, population);
+    const populationGrowthRate =
+      base.naturalPopGrowthRate + netMigrationExpected / Math.max(1, population);
+    const populationGrowthDelta = populationGrowthRate - baselinePopGrowthRate;
+    const wageGrowthDelta = wageGrowth - (base.wageGrowthRate ?? BASELINE_WAGE_GROWTH);
+
+    const rentGapRatio =
+      gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
+    const investorDemandShock = clamp(1 - combinedInvestorMult, -0.2, 0.4);
+    const rentResult = computeRentSeries({
+      base,
+      yearIndex: i,
+      prevRent: medianAnnualRent,
+      baselineRentGrowth: BASELINE_NOMINAL_RENT_GROWTH,
+      gapRatio: rentGapRatio,
+      investorDemandShock,
+      supplyGrowthDelta,
+      populationGrowthDelta,
+      wageGrowthDelta,
+      c,
+      curves,
+      rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
+      rentGrowthCap: policyChannels.rentGrowthCap,
+      rentRegulationCoverage: policyChannels.rentRegulationCoverage,
+    });
+
+    medianPrice = medianPrice * (1 + nominalPriceGrowth);
+    medianAnnualRent = rentResult.nextRent;
+
     const turnoverRate = Math.max(0.01, Math.min(0.12, c.annualTurnoverRate * policyChannels.turnoverMultiplier));
     const stampDutyRate = Math.max(
       0,
@@ -979,6 +1255,18 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
     });
 
     const medianIncomeProxy = (wageIndex / 100) * 90000;
+    const insurance = computeInsuranceSeries({
+      base,
+      prevPremiumExTax: insurancePremiumExTax,
+      inflation,
+      medianIncomeProxy,
+    });
+    insurancePremiumExTax = insurance.premiumExTax;
+    insurancePremiumTax = insurance.premiumTax;
+    insurancePremiumIncTax = insurance.premiumIncTax;
+
+    cumulativeRentPaid += medianAnnualRent;
+    cumulativeInsurancePaid += insurancePremiumIncTax;
     const principal = medianPrice * c.typicalLVR;
     const typicalMortgagePayment = amortizedAnnualPayment({
       principal,
@@ -988,6 +1276,7 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
 
     const priceToIncomeIndex = medianPrice / Math.max(1, medianIncomeProxy);
     const rentToIncomeIndex = medianAnnualRent / Math.max(1, medianIncomeProxy);
+    const insuranceToIncomeIndex = insurancePremiumIncTax / Math.max(1, medianIncomeProxy);
     const typicalMortgagePaymentShareOfIncome = typicalMortgagePayment / Math.max(1, medianIncomeProxy);
     const typicalRentShareOfIncome = medianAnnualRent / Math.max(1, medianIncomeProxy);
 
@@ -1020,7 +1309,7 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       demandHouseholds,
       gapRatio,
       nominalPriceGrowth,
-      nominalRentGrowth,
+      nominalRentGrowth: rentResult.nominalRentGrowth,
       stampDutyRevenue,
       policyChannels: {
         investorDemandMultiplier: investorChannels.investorDemandMultiplier,
@@ -1031,11 +1320,18 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       affordability: {
         priceToIncomeIndex,
         rentToIncomeIndex,
+        insuranceToIncomeIndex,
         typicalMortgagePayment,
         typicalMortgagePaymentShareOfIncome,
         typicalRentShareOfIncome,
       },
       deciles,
+      insurancePremiumExTax,
+      insurancePremiumTax,
+      insurancePremiumIncTax,
+      insuranceGrowth: insurance.insuranceGrowth,
+      cumulativeRentPaid,
+      cumulativeInsurancePaid,
     });
 
     const hci = housingCostIndex({ medianPrice, medianAnnualRent, wageIndex });
@@ -1070,6 +1366,7 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
     yearN: last.year,
     medianPriceChangePct: pctChange(first.medianPrice, last.medianPrice),
     medianRentChangePct: pctChange(first.medianAnnualRent, last.medianAnnualRent),
+    insurancePremiumChangePct: pctChange(first.insurancePremiumIncTax, last.insurancePremiumIncTax),
     medianWageChangePct: pctChange(first.medianAnnualWage, last.medianAnnualWage),
     dwellingStockChangePct: pctChange(first.dwellingStock, last.dwellingStock),
     stampDutyRevenueChangePct: pctChange(first.stampDutyRevenue, last.stampDutyRevenue),
@@ -1145,6 +1442,7 @@ export function runScenario(params: ScenarioParams): ScenarioOutputs {
     const basePrice = city.years[0].medianPrice;
     const baseRent = city.years[0].medianAnnualRent;
     const baseWage = city.years[0].medianAnnualWage;
+    const baseInsurance = city.years[0].insurancePremiumIncTax;
 
     const years: RegionYearState[] = city.years.map((y) => {
       const hci = housingCostIndex({
@@ -1158,12 +1456,19 @@ export function runScenario(params: ScenarioParams): ScenarioOutputs {
         dwellingStock: y.dwellingStock,
         medianPrice: y.medianPrice,
         medianAnnualRent: y.medianAnnualRent,
+        insurancePremiumExTax: y.insurancePremiumExTax,
+        insurancePremiumTax: y.insurancePremiumTax,
+        insurancePremiumIncTax: y.insurancePremiumIncTax,
+        insuranceToIncomeIndex: y.affordability.insuranceToIncomeIndex,
+        cumulativeRentPaid: y.cumulativeRentPaid,
+        cumulativeInsurancePaid: y.cumulativeInsurancePaid,
         stampDutyRevenue: y.stampDutyRevenue,
         wageIndex: (y.medianAnnualWage / Math.max(1e-9, baseWage)) * 100,
         medianAnnualWage: y.medianAnnualWage,
         housingCostIndex: hci,
         priceIndex: (y.medianPrice / Math.max(1e-9, basePrice)) * 100,
         rentIndex: (y.medianAnnualRent / Math.max(1e-9, baseRent)) * 100,
+        insuranceIndex: (y.insurancePremiumIncTax / Math.max(1e-9, baseInsurance)) * 100,
       };
     });
 
@@ -1180,6 +1485,7 @@ export function runScenario(params: ScenarioParams): ScenarioOutputs {
         yearN: last.year,
         medianPriceChangePct: pctChange(first.medianPrice, last.medianPrice),
         medianRentChangePct: pctChange(first.medianAnnualRent, last.medianAnnualRent),
+        insurancePremiumChangePct: pctChange(first.insurancePremiumIncTax, last.insurancePremiumIncTax),
         medianWageChangePct: pctChange(first.medianAnnualWage, last.medianAnnualWage),
         dwellingStockChangePct: pctChange(first.dwellingStock, last.dwellingStock),
         stampDutyRevenueChangePct: pctChange(first.stampDutyRevenue, last.stampDutyRevenue),

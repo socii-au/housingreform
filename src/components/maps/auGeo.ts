@@ -151,6 +151,55 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
         [240, 420], [420, 360], [420, 520], [300, 600], [240, 560], [240, 420],
       ]] },
     },
+    {
+      type: "Feature",
+      properties: { cityId: "GER", state: "WA", name: "Geraldton" },
+      geometry: { type: "Polygon", coordinates: [[
+        [170, 230], [260, 230], [260, 300], [180, 300], [170, 260], [170, 230],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "BRO", state: "WA", name: "Broome" },
+      geometry: { type: "Polygon", coordinates: [[
+        [190, 140], [300, 140], [300, 200], [210, 210], [190, 180], [190, 140],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "KAR", state: "WA", name: "Karratha" },
+      geometry: { type: "Polygon", coordinates: [[
+        [250, 190], [330, 190], [330, 250], [260, 260], [240, 220], [250, 190],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "PHD", state: "WA", name: "Port Hedland" },
+      geometry: { type: "Polygon", coordinates: [[
+        [290, 170], [350, 170], [360, 210], [300, 220], [280, 200], [290, 170],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "NWM", state: "WA", name: "Newman" },
+      geometry: { type: "Polygon", coordinates: [[
+        [300, 230], [360, 230], [360, 270], [320, 285], [290, 260], [300, 230],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TMP", state: "WA", name: "Tom Price" },
+      geometry: { type: "Polygon", coordinates: [[
+        [280, 240], [320, 240], [330, 270], [300, 285], [270, 265], [280, 240],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "ALB", state: "WA", name: "Albany" },
+      geometry: { type: "Polygon", coordinates: [[
+        [150, 540], [240, 540], [240, 610], [170, 620], [140, 580], [150, 540],
+      ]] },
+    },
 
     // NT: DRW
     {
@@ -167,6 +216,20 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
         [430, 220], [600, 220], [600, 330], [430, 330], [430, 220],
       ]] },
     },
+    {
+      type: "Feature",
+      properties: { cityId: "KAT", state: "NT", name: "Katherine" },
+      geometry: { type: "Polygon", coordinates: [[
+        [470, 200], [560, 200], [560, 250], [480, 260], [450, 230], [470, 200],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TNC", state: "NT", name: "Tennant Creek" },
+      geometry: { type: "Polygon", coordinates: [[
+        [470, 250], [560, 250], [560, 290], [470, 290], [470, 250],
+      ]] },
+    },
 
     // SA: ADL
     {
@@ -178,9 +241,58 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
     },
     {
       type: "Feature",
+      properties: { cityId: "WHY", state: "SA", name: "Whyalla" },
+      geometry: { type: "Polygon", coordinates: [[
+        [450, 440], [520, 440], [520, 500], [460, 510], [440, 470], [450, 440],
+      ]] },
+    },
+    {
+      type: "Feature",
       properties: { cityId: "MTG", state: "SA", name: "Mount Gambier" },
       geometry: { type: "Polygon", coordinates: [[
         [560, 520], [600, 520], [600, 560], [540, 560], [560, 520],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "PLN", state: "SA", name: "Port Lincoln" },
+      geometry: { type: "Polygon", coordinates: [[
+        [520, 500], [580, 500], [590, 530], [540, 540], [510, 520], [520, 500],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "PPR", state: "SA", name: "Port Pirie" },
+      geometry: { type: "Polygon", coordinates: [[
+        [500, 450], [540, 450], [550, 480], [510, 490], [490, 470], [500, 450],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "PAG", state: "SA", name: "Port Augusta" },
+      geometry: { type: "Polygon", coordinates: [[
+        [470, 410], [520, 410], [530, 440], [490, 450], [460, 430], [470, 410],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "MBR", state: "SA", name: "Murray Bridge" },
+      geometry: { type: "Polygon", coordinates: [[
+        [540, 500], [590, 500], [600, 530], [560, 540], [530, 520], [540, 500],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "VHB", state: "SA", name: "Victor Harbor" },
+      geometry: { type: "Polygon", coordinates: [[
+        [520, 530], [560, 530], [570, 550], [540, 560], [510, 540], [520, 530],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "NRC", state: "SA", name: "Naracoorte" },
+      geometry: { type: "Polygon", coordinates: [[
+        [560, 540], [610, 540], [620, 570], [580, 590], [550, 570], [560, 540],
       ]] },
     },
 
@@ -229,6 +341,13 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
     },
     {
       type: "Feature",
+      properties: { cityId: "IPS", state: "QLD", name: "Ipswich" },
+      geometry: { type: "Polygon", coordinates: [[
+        [610, 360], [660, 360], [670, 390], [630, 410], [600, 390], [610, 360],
+      ]] },
+    },
+    {
+      type: "Feature",
       properties: { cityId: "GC", state: "QLD", name: "Gold Coast" },
       geometry: { type: "Polygon", coordinates: [[
         [710, 420], [820, 420], [820, 460], [740, 460], [710, 420],
@@ -250,9 +369,23 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
     },
     {
       type: "Feature",
+      properties: { cityId: "MBH", state: "QLD", name: "Maryborough" },
+      geometry: { type: "Polygon", coordinates: [[
+        [720, 330], [760, 330], [770, 355], [740, 380], [710, 360], [720, 330],
+      ]] },
+    },
+    {
+      type: "Feature",
       properties: { cityId: "BDG", state: "QLD", name: "Bundaberg" },
       geometry: { type: "Polygon", coordinates: [[
         [720, 350], [740, 340], [740, 380], [710, 400], [700, 370], [720, 350],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "GYP", state: "QLD", name: "Gympie" },
+      geometry: { type: "Polygon", coordinates: [[
+        [690, 330], [720, 330], [740, 360], [710, 380], [680, 360], [690, 330],
       ]] },
     },
     {
@@ -287,6 +420,125 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
     },
     {
       type: "Feature",
+      properties: { cityId: "PST", state: "NSW", name: "Port Stephens" },
+      geometry: { type: "Polygon", coordinates: [[
+        [880, 470], [920, 470], [920, 500], [880, 500], [880, 470],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "PMQ", state: "NSW", name: "Port Macquarie" },
+      geometry: { type: "Polygon", coordinates: [[
+        [860, 420], [920, 420], [920, 450], [860, 450], [860, 420],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TAR", state: "NSW", name: "Taree" },
+      geometry: { type: "Polygon", coordinates: [[
+        [840, 440], [890, 440], [900, 470], [860, 480], [830, 460], [840, 440],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "FOS", state: "NSW", name: "Forster–Tuncurry" },
+      geometry: { type: "Polygon", coordinates: [[
+        [860, 430], [900, 430], [910, 450], [880, 465], [850, 450], [860, 430],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "KPS", state: "NSW", name: "Kempsey" },
+      geometry: { type: "Polygon", coordinates: [[
+        [870, 445], [900, 445], [900, 470], [870, 470], [870, 445],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "NMB", state: "NSW", name: "Nambucca" },
+      geometry: { type: "Polygon", coordinates: [[
+        [895, 445], [920, 445], [920, 470], [895, 470], [895, 445],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "COF", state: "NSW", name: "Coffs Harbour" },
+      geometry: { type: "Polygon", coordinates: [[
+        [870, 450], [920, 450], [920, 480], [870, 480], [870, 450],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "LSM", state: "NSW", name: "Lismore" },
+      geometry: { type: "Polygon", coordinates: [[
+        [900, 440], [920, 440], [920, 470], [900, 470], [900, 440],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "BLN", state: "NSW", name: "Ballina" },
+      geometry: { type: "Polygon", coordinates: [[
+        [910, 440], [930, 440], [930, 460], [910, 460], [910, 440],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "BYR", state: "NSW", name: "Byron Bay" },
+      geometry: { type: "Polygon", coordinates: [[
+        [920, 445], [940, 445], [940, 465], [920, 465], [920, 445],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TWD", state: "NSW", name: "Tweed Heads" },
+      geometry: { type: "Polygon", coordinates: [[
+        [920, 455], [940, 455], [940, 475], [920, 475], [920, 455],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TMW", state: "NSW", name: "Tamworth" },
+      geometry: { type: "Polygon", coordinates: [[
+        [790, 450], [850, 450], [850, 490], [790, 490], [790, 450],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "DBO", state: "NSW", name: "Dubbo" },
+      geometry: { type: "Polygon", coordinates: [[
+        [740, 470], [800, 470], [800, 510], [740, 510], [740, 470],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "ORG", state: "NSW", name: "Orange" },
+      geometry: { type: "Polygon", coordinates: [[
+        [770, 510], [820, 510], [820, 540], [770, 540], [770, 510],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "BTH", state: "NSW", name: "Bathurst" },
+      geometry: { type: "Polygon", coordinates: [[
+        [800, 530], [840, 530], [840, 560], [800, 560], [800, 530],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "GOU", state: "NSW", name: "Goulburn" },
+      geometry: { type: "Polygon", coordinates: [[
+        [770, 560], [820, 560], [820, 600], [770, 600], [770, 560],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "NRA", state: "NSW", name: "Nowra–Shoalhaven" },
+      geometry: { type: "Polygon", coordinates: [[
+        [800, 540], [850, 540], [850, 580], [800, 580], [800, 540],
+      ]] },
+    },
+    {
+      type: "Feature",
       properties: { cityId: "WOL", state: "NSW", name: "Wollongong" },
       geometry: { type: "Polygon", coordinates: [[
         [720, 560], [760, 560], [760, 610], [720, 610], [700, 590], [720, 560],
@@ -304,6 +556,20 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
       properties: { cityId: "WGA", state: "NSW", name: "Wagga Wagga" },
       geometry: { type: "Polygon", coordinates: [[
         [650, 560], [720, 560], [720, 610], [650, 610], [650, 560],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "GRF", state: "NSW", name: "Griffith" },
+      geometry: { type: "Polygon", coordinates: [[
+        [700, 540], [760, 540], [770, 570], [730, 580], [700, 560], [700, 540],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "LET", state: "NSW", name: "Leeton" },
+      geometry: { type: "Polygon", coordinates: [[
+        [730, 530], [780, 530], [790, 560], [760, 575], [720, 555], [730, 530],
       ]] },
     },
     {
@@ -345,9 +611,51 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
     },
     {
       type: "Feature",
+      properties: { cityId: "MLD", state: "VIC", name: "Mildura" },
+      geometry: { type: "Polygon", coordinates: [[
+        [610, 600], [660, 600], [660, 620], [610, 620], [610, 600],
+      ]] },
+    },
+    {
+      type: "Feature",
       properties: { cityId: "SHP", state: "VIC", name: "Shepparton" },
       geometry: { type: "Polygon", coordinates: [[
         [700, 610], [740, 610], [740, 640], [700, 650], [700, 610],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "WGR", state: "VIC", name: "Wangaratta" },
+      geometry: { type: "Polygon", coordinates: [[
+        [740, 610], [780, 610], [780, 640], [740, 640], [740, 610],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "HOR", state: "VIC", name: "Horsham" },
+      geometry: { type: "Polygon", coordinates: [[
+        [610, 630], [640, 630], [640, 660], [610, 660], [610, 630],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "WAR", state: "VIC", name: "Warrnambool" },
+      geometry: { type: "Polygon", coordinates: [[
+        [650, 670], [700, 670], [700, 690], [650, 690], [650, 670],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "TRG", state: "VIC", name: "Traralgon" },
+      geometry: { type: "Polygon", coordinates: [[
+        [760, 640], [800, 640], [800, 670], [760, 670], [760, 640],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "SAL", state: "VIC", name: "Sale" },
+      geometry: { type: "Polygon", coordinates: [[
+        [800, 650], [830, 650], [830, 670], [800, 670], [800, 650],
       ]] },
     },
 
@@ -364,6 +672,20 @@ export const AU_CITY_CATCHMENTS_GEOJSON: FeatureCollection<{
       properties: { cityId: "LST", state: "TAS", name: "Launceston" },
       geometry: { type: "Polygon", coordinates: [[
         [780, 700], [840, 700], [860, 740], [795, 720], [780, 700],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "DVP", state: "TAS", name: "Devonport" },
+      geometry: { type: "Polygon", coordinates: [[
+        [770, 690], [800, 690], [800, 710], [770, 710], [770, 690],
+      ]] },
+    },
+    {
+      type: "Feature",
+      properties: { cityId: "BUR", state: "TAS", name: "Burnie" },
+      geometry: { type: "Polygon", coordinates: [[
+        [750, 690], [770, 690], [770, 710], [750, 710], [750, 690],
       ]] },
     },
   ],

@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
-import type { CityId, StateId } from "../model/regions";
+import type { CityId, StateId, Scope } from "../model/regions";
 import { ALL_STATES, STATE_NAMES, cityMeta } from "../model/regions";
 import type { ScenarioOutputs } from "../model/runScenario";
 import type { ScenarioParams } from "../model/methodology";
@@ -49,16 +49,50 @@ const CITY_POINTS: CityPoint[] = [
   { cityId: "PER", x: 220, y: 320, r: 78 },
   { cityId: "BUN", x: 260, y: 440, r: 42 },
   { cityId: "KAL", x: 320, y: 420, r: 34 },
+  { cityId: "GER", x: 230, y: 270, r: 34 },
+  { cityId: "ALB", x: 200, y: 560, r: 30 },
+  { cityId: "BRO", x: 240, y: 180, r: 34 },
+  { cityId: "KAR", x: 280, y: 220, r: 34 },
+  { cityId: "PHD", x: 310, y: 190, r: 30 },
+  { cityId: "NWM", x: 320, y: 250, r: 26 },
+  { cityId: "TMP", x: 300, y: 260, r: 24 },
 
   { cityId: "ADL", x: 515, y: 475, r: 64 },
   { cityId: "MTG", x: 560, y: 560, r: 28 },
+  { cityId: "WHY", x: 480, y: 460, r: 26 },
+  { cityId: "PLN", x: 560, y: 505, r: 26 },
+  { cityId: "PPR", x: 520, y: 470, r: 24 },
+  { cityId: "PAG", x: 500, y: 430, r: 24 },
+  { cityId: "MBR", x: 560, y: 520, r: 24 },
+  { cityId: "VHB", x: 540, y: 540, r: 22 },
+  { cityId: "NRC", x: 580, y: 560, r: 22 },
 
   { cityId: "DRW", x: 510, y: 200, r: 50 },
   { cityId: "ASP", x: 520, y: 280, r: 32 },
+  { cityId: "KAT", x: 520, y: 240, r: 26 },
+  { cityId: "TNC", x: 520, y: 260, r: 24 },
 
   { cityId: "CBR", x: 820, y: 560, r: 34 },
   { cityId: "SYD", x: 860, y: 520, r: 78 },
   { cityId: "NCL", x: 885, y: 485, r: 36 },
+  { cityId: "PST", x: 900, y: 490, r: 28 },
+  { cityId: "PMQ", x: 885, y: 470, r: 30 },
+  { cityId: "TAR", x: 875, y: 465, r: 26 },
+  { cityId: "FOS", x: 885, y: 455, r: 24 },
+  { cityId: "KPS", x: 890, y: 460, r: 24 },
+  { cityId: "NMB", x: 895, y: 460, r: 24 },
+  { cityId: "COF", x: 900, y: 455, r: 30 },
+  { cityId: "LSM", x: 910, y: 445, r: 28 },
+  { cityId: "BLN", x: 915, y: 450, r: 24 },
+  { cityId: "BYR", x: 920, y: 455, r: 22 },
+  { cityId: "TWD", x: 920, y: 460, r: 24 },
+  { cityId: "TMW", x: 850, y: 470, r: 28 },
+  { cityId: "DBO", x: 800, y: 485, r: 28 },
+  { cityId: "ORG", x: 820, y: 520, r: 24 },
+  { cityId: "BTH", x: 810, y: 530, r: 24 },
+  { cityId: "GOU", x: 800, y: 575, r: 24 },
+  { cityId: "GRF", x: 740, y: 560, r: 24 },
+  { cityId: "LET", x: 760, y: 550, r: 22 },
   { cityId: "WOL", x: 845, y: 555, r: 34 },
   { cityId: "CCS", x: 870, y: 500, r: 32 },
   { cityId: "ALW", x: 760, y: 595, r: 36 },
@@ -69,13 +103,24 @@ const CITY_POINTS: CityPoint[] = [
   { cityId: "BEN", x: 720, y: 625, r: 34 },
   { cityId: "BAL", x: 740, y: 640, r: 34 },
   { cityId: "SHP", x: 700, y: 615, r: 28 },
+  { cityId: "MLD", x: 640, y: 610, r: 28 },
+  { cityId: "WAR", x: 700, y: 675, r: 26 },
+  { cityId: "TRG", x: 785, y: 650, r: 26 },
+  { cityId: "HOR", x: 640, y: 655, r: 24 },
+  { cityId: "WGR", x: 760, y: 615, r: 24 },
+  { cityId: "SAL", x: 805, y: 660, r: 24 },
 
   { cityId: "HBA", x: 820, y: 725, r: 44 },
   { cityId: "LST", x: 800, y: 705, r: 32 },
+  { cityId: "DVP", x: 790, y: 695, r: 26 },
+  { cityId: "BUR", x: 770, y: 690, r: 24 },
 
   { cityId: "BNE", x: 820, y: 360, r: 70 },
+  { cityId: "IPS", x: 805, y: 385, r: 36 },
   { cityId: "GC", x: 850, y: 395, r: 42 },
   { cityId: "SC", x: 800, y: 325, r: 42 },
+  { cityId: "GYP", x: 790, y: 360, r: 28 },
+  { cityId: "MBH", x: 800, y: 340, r: 26 },
   { cityId: "TWB", x: 780, y: 385, r: 34 },
   { cityId: "ROP", x: 770, y: 265, r: 34 },
   { cityId: "MKY", x: 810, y: 245, r: 36 },
@@ -188,14 +233,26 @@ export function AustraliaCrisisMap(props: {
   year: number;
   historyBundle?: HistoryBundle;
   title?: string;
+  scope?: Scope;
 }) {
-  const { outputs, params, year } = props;
+  const { outputs, params, year, scope } = props;
   const historyBundle = sanitizeHistoryBundle(props.historyBundle) ?? undefined;
   const [hoverCity, setHoverCity] = useState<CityId | null>(null);
   const [hoverSA2, setHoverSA2] = useState<SA2Feature | null>(null);
   const [hoverSA3, setHoverSA3] = useState<SA3Feature | null>(null);
   const [hoverSA4, setHoverSA4] = useState<SA4Feature | null>(null);
-  const [mapLayer, setMapLayer] = useState<MapLayer>("sa3"); // Default to SA3 layer
+  const [mapLayer, setMapLayer] = useState<MapLayer>("cities"); // Default to Cities layer
+
+  const activeCity = scope?.level === "city" ? scope.city : null;
+  const activeState =
+    scope?.level === "state"
+      ? scope.state
+      : scope?.level === "city"
+        ? cityMeta(scope.city).state
+        : null;
+  const isStateAllowed = (stateId: StateId) => (!activeState ? true : stateId === activeState);
+  const isCityAllowed = (cityId: CityId) =>
+    activeCity ? cityId === activeCity : !activeState ? true : cityMeta(cityId).state === activeState;
 
   // Zoom and pan state
   const [zoom, setZoom] = useState(1);
@@ -278,6 +335,10 @@ export function AustraliaCrisisMap(props: {
       setMapLayer("sa2");
     }
   }, [zoom, mapLayer]);
+
+  useEffect(() => {
+    if (activeCity && mapLayer !== "cities") setMapLayer("cities");
+  }, [activeCity, mapLayer]);
 
   // Compute SA2 crisis scores (most granular)
   const sa2Scores = useMemo(() => {
@@ -363,6 +424,11 @@ export function AustraliaCrisisMap(props: {
   const hoverSA2Score = hoverSA2 ? sa2Scores.get(hoverSA2.code) : null;
   const hoverSA3Score = hoverSA3 ? sa3Scores.get(hoverSA3.code) : null;
   const hoverSA4Score = hoverSA4 ? sa4Scores.get(hoverSA4.code) : null;
+
+  const catchmentCityIds = useMemo(
+    () => new Set(AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => f.properties.cityId as CityId)),
+    []
+  );
 
   return (
     <div className="card" style={{ padding: 14 }}>
@@ -571,6 +637,7 @@ export function AustraliaCrisisMap(props: {
             {AU_STATE_SUBREGIONS_GEOJSON.features.map((f) => {
               const id = f.properties.id;
               const st = f.properties.state as StateId;
+              if (!isStateAllowed(st)) return null;
               const score = subregionScores[id];
               const fill = score == null ? "rgba(148,163,184,0.12)" : alphaColor(crisisColor(score), 0.22);
               return (
@@ -590,6 +657,7 @@ export function AustraliaCrisisMap(props: {
               SA2_FEATURES.map((f) => {
                 const score = sa2Scores.get(f.code);
                 const stateId = STATE_CODE_MAP[f.state as keyof typeof STATE_CODE_MAP] as StateId;
+                if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.65) : "#e5e7eb";
                 const isHover = hoverSA2?.code === f.code;
                 return (
@@ -614,6 +682,7 @@ export function AustraliaCrisisMap(props: {
               SA4_FEATURES.map((f) => {
                 const score = sa4Scores.get(f.code);
                 const stateId = STATE_CODE_MAP[f.state] as StateId;
+                if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
                 const isHover = hoverSA4?.code === f.code;
                 return (
@@ -638,6 +707,7 @@ export function AustraliaCrisisMap(props: {
               SA3_FEATURES.map((f) => {
                 const score = sa3Scores.get(f.code);
                 const stateId = STATE_CODE_MAP[f.state] as StateId;
+                if (stateId && !isStateAllowed(stateId)) return null;
                 const fill = score != null ? alphaColor(crisisColor(score), 0.70) : "#e5e7eb";
                 const isHover = hoverSA3?.code === f.code;
                 return (
@@ -662,6 +732,7 @@ export function AustraliaCrisisMap(props: {
               AU_CITY_CATCHMENTS_GEOJSON.features.map((f) => {
                 const cityId = f.properties.cityId as CityId;
                 const st = f.properties.state as StateId;
+                if (!isCityAllowed(cityId) || !isStateAllowed(st)) return null;
                 const detail = cityScores[cityId];
                 const d = polygonToPath(f.geometry);
                 const fill = detail ? alphaColor(crisisColor(detail.score01), 0.60) : "#e5e7eb";
@@ -677,19 +748,41 @@ export function AustraliaCrisisMap(props: {
                 );
               })}
 
+            {/* Fallback city heat bubbles (for any city without a catchment polygon) */}
+            {mapLayer === "cities" &&
+              CITY_POINTS.filter((p) => !catchmentCityIds.has(p.cityId))
+                .filter((p) => isCityAllowed(p.cityId))
+                .map((p) => {
+                const detail = cityScores[p.cityId];
+                const fill = detail ? alphaColor(crisisColor(detail.score01), 0.35) : "rgba(148,163,184,0.35)";
+                return (
+                  <circle
+                    key={`bubble-${p.cityId}`}
+                    cx={p.x}
+                    cy={p.y}
+                    r={p.r}
+                    fill={fill}
+                    stroke="rgba(15,23,42,0.10)"
+                    strokeWidth={1 / zoom}
+                  />
+                );
+              })}
+
             {/* State borders on top */}
-            {AU_STATES_GEOJSON.features.map((f) => (
-              <path
-                key={`st-b-${f.properties.id}`}
-                d={polygonToPath(f.geometry)}
-                fill="none"
-                stroke="#94a3b8"
-                strokeWidth={2 / zoom}
-              />
-            ))}
+            {AU_STATES_GEOJSON.features.map((f) =>
+              isStateAllowed(f.properties.id as StateId) ? (
+                <path
+                  key={`st-b-${f.properties.id}`}
+                  d={polygonToPath(f.geometry)}
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth={2 / zoom}
+                />
+              ) : null
+            )}
 
             {/* City centres (sharp) */}
-            {CITY_POINTS.map((p) => {
+            {CITY_POINTS.filter((p) => isCityAllowed(p.cityId)).map((p) => {
               const detail = cityScores[p.cityId];
               const col = detail ? crisisColor(detail.score01) : "#94a3b8";
               const name = cityMeta(p.cityId).name;
@@ -709,6 +802,7 @@ export function AustraliaCrisisMap(props: {
 
             {/* State labels */}
             {ALL_STATES.map((st) => {
+              if (!isStateAllowed(st)) return null;
               const anchor: Record<StateId, { x: number; y: number }> = {
                 WA: { x: 220, y: 210 },
                 NT: { x: 505, y: 175 },

@@ -17,7 +17,10 @@ import {
   DEFAULT_POLICY_LEVERS,
   SCENARIO_PRESETS,
 } from "./presets";
+import { buildSyntheticHistoryBundle } from "./history/synthetic";
 import { clampPolicyV2, toPolicyV2 } from "./policyRegistry";
+import { autoRbaResponseFromPolicy, type RatePathConfig } from "./ratePath";
+import { ABS_HISTORY_BUNDLE } from "./history/absBundle";
 
 /**
  * Merge multiple presets by stacking their effects.
@@ -198,6 +201,8 @@ type ModelState = {
   showHistory: boolean;
   historyIndexBase: "history" | "year0";
   focusYear: number | null;
+  ratePath: RatePathConfig;
+  autoRba: boolean;
 };
 
 type Action =
@@ -212,6 +217,8 @@ type Action =
   | { type: "setShowHistory"; showHistory: boolean }
   | { type: "setHistoryIndexBase"; base: "history" | "year0" }
   | { type: "setFocusYear"; year: number | null }
+  | { type: "setRatePath"; ratePath: RatePathConfig }
+  | { type: "setAutoRba"; autoRba: boolean }
   | { type: "reset" };
 
 const initialState: ModelState = {
@@ -225,6 +232,14 @@ const initialState: ModelState = {
   showHistory: false,
   historyIndexBase: "history",
   focusYear: null,
+  ratePath: {
+    mode: "scenario",
+    scenario: "steady",
+    baseRate: 0.045,
+    terminalRate: 0.035,
+    mortgageSpread: 0.02,
+  },
+  autoRba: true,
 };
 
 function reducer(state: ModelState, action: Action): ModelState {
@@ -309,6 +324,10 @@ function reducer(state: ModelState, action: Action): ModelState {
       return { ...state, historyIndexBase: action.base };
     case "setFocusYear":
       return { ...state, focusYear: action.year };
+    case "setRatePath":
+      return { ...state, ratePath: action.ratePath };
+    case "setAutoRba":
+      return { ...state, autoRba: action.autoRba };
     case "reset":
       return initialState;
     default:
@@ -329,6 +348,9 @@ type ModelContextValue = {
   showHistory: boolean;
   historyIndexBase: "history" | "year0";
   focusYear: number | null;
+  ratePath: RatePathConfig;
+  autoRba: boolean;
+  autoRbaMessage: string;
 
   // City-level data (if scope is city)
   selectedCityData: CityScenarioOutputs | null;
@@ -348,6 +370,8 @@ type ModelContextValue = {
   setShowHistory: (show: boolean) => void;
   setHistoryIndexBase: (base: "history" | "year0") => void;
   setFocusYear: (year: number | null) => void;
+  setRatePath: (ratePath: RatePathConfig) => void;
+  setAutoRba: (auto: boolean) => void;
   resetToDefaults: () => void;
 };
 
@@ -356,14 +380,37 @@ const Ctx = createContext<ModelContextValue | null>(null);
 export function ModelProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  const policyV2 = useMemo(() => toPolicyV2(state.policy as any), [state.policy]);
+  const autoRba = useMemo(() => autoRbaResponseFromPolicy(policyV2), [policyV2]);
+  const effectiveRatePath = useMemo(() => {
+    if (!state.autoRba) return state.ratePath;
+    return {
+      ...state.ratePath,
+      mode: "scenario",
+      scenario: autoRba.scenario,
+    } as RatePathConfig;
+  }, [state.ratePath, state.autoRba, autoRba.scenario]);
+
+  const cities = useMemo(
+    () => (state.includeAllCities ? getAllCityBaselines() : getCapitalBaselines()),
+    [state.includeAllCities]
+  );
+
+  const syntheticHistoryBundle = useMemo(
+    () => buildSyntheticHistoryBundle({ cities }),
+    [cities]
+  );
+  const historyBundle = ABS_HISTORY_BUNDLE ?? syntheticHistoryBundle;
+
   const params: ScenarioParams = useMemo(
     () => ({
       years: state.years,
-      cities: state.includeAllCities ? getAllCityBaselines() : getCapitalBaselines(),
-      policy: state.policy,
+      cities,
+      policy: policyV2,
+      ratePath: effectiveRatePath,
       engine: state.engine,
-      advanced:
-        state.engine === "advanced"
+      advanced: {
+        ...(state.engine === "advanced"
           ? {
               spatialEquilibrium: { enabled: true },
               expectations: { enabled: true, model: "mixed" },
@@ -371,9 +418,14 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
               microDistributions: { enabled: false },
               calibration: { enabled: false },
             }
-          : undefined,
+          : {}),
+        calibration: {
+          enabled: false,
+          historyBundle,
+        },
+      },
     }),
-    [state.years, state.policy, state.includeAllCities, state.engine]
+    [state.years, state.engine, policyV2, effectiveRatePath, cities, historyBundle]
   );
 
   const calibrationReport = useMemo(() => {
@@ -432,6 +484,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       showHistory: state.showHistory,
       historyIndexBase: state.historyIndexBase,
       focusYear: state.focusYear,
+      ratePath: effectiveRatePath,
+      autoRba: state.autoRba,
+      autoRbaMessage: autoRba.message,
       selectedCityData,
       patchPolicy: (patch) => dispatch({ type: "patchPolicy", patch }),
       setPolicy: (policy) => dispatch({ type: "setPolicy", policy }),
@@ -447,6 +502,8 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       setShowHistory: (show) => dispatch({ type: "setShowHistory", showHistory: show }),
       setHistoryIndexBase: (base) => dispatch({ type: "setHistoryIndexBase", base }),
       setFocusYear: (year) => dispatch({ type: "setFocusYear", year }),
+      setRatePath: (ratePath) => dispatch({ type: "setRatePath", ratePath }),
+      setAutoRba: (auto) => dispatch({ type: "setAutoRba", autoRba: auto }),
       resetToDefaults: () => dispatch({ type: "reset" }),
     }),
     [
@@ -463,6 +520,9 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
       state.showHistory,
       state.historyIndexBase,
       state.focusYear,
+      effectiveRatePath,
+      state.autoRba,
+      autoRba.message,
     ]
   );
 

@@ -4,6 +4,7 @@ import { SCENARIO_PRESETS, ALL_STATES, STATE_NAMES, CITIES } from "../model/type
 import type { NegativeGearingMode, StateId, CityId } from "../model/types";
 import { HELP, InfoTooltip } from "./shared/HelpText";
 import { toPolicyV2 } from "../model/policyRegistry";
+import { GROUP_PARTIES, PARTY_ORDER, PartyChip, PRESET_PARTIES } from "./policyParty";
 
 function fmtPct(n: number): string {
   const sign = n >= 0 ? "+" : "";
@@ -114,6 +115,11 @@ export function ControlsPanel() {
     setShowHistory,
     historyIndexBase,
     setHistoryIndexBase,
+    ratePath,
+    setRatePath,
+    autoRba,
+    setAutoRba,
+    autoRbaMessage,
   } = useModel();
 
   const policy = toPolicyV2(params.policy as any);
@@ -157,6 +163,25 @@ export function ControlsPanel() {
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>
             Select multiple scenarios to stack their effects. Effects combine additively where applicable.
           </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+              padding: "6px 8px",
+              background: "var(--bg-subtle)",
+              borderRadius: 8,
+              marginBottom: 10,
+            }}
+            aria-label="Policy color key"
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginRight: 4 }}>
+              Color key:
+            </span>
+            {PARTY_ORDER.map((p) => (
+              <PartyChip key={p} party={p} />
+            ))}
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {/* Baseline */}
             <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -182,6 +207,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🔧 Remove Negative Gearing</span>
+                {PRESET_PARTIES["ng-remove"]?.map((p) => (
+                  <PartyChip key={`ng-remove-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -191,6 +219,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>⚡ Remove NG (Immediate)</span>
+                {PRESET_PARTIES["ng-remove-fast"]?.map((p) => (
+                  <PartyChip key={`ng-remove-fast-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -200,6 +231,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>↩️ Restore Negative Gearing</span>
+                {PRESET_PARTIES["ng-restore"]?.map((p) => (
+                  <PartyChip key={`ng-restore-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -209,6 +243,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🏠 Ownership Cap (1 PPOR + 1 IP)</span>
+                {PRESET_PARTIES["ownership-cap"]?.map((p) => (
+                  <PartyChip key={`ownership-cap-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -218,6 +255,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>⚔️ Ownership Cap (Aggressive)</span>
+                {PRESET_PARTIES["ownership-cap-aggressive"]?.map((p) => (
+                  <PartyChip key={`ownership-cap-aggressive-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -227,6 +267,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🏗️ Supply Boost +20%</span>
+                {PRESET_PARTIES["supply-boost"]?.map((p) => (
+                  <PartyChip key={`supply-boost-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -236,6 +279,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>📦 Comprehensive Reform</span>
+                {PRESET_PARTIES["comprehensive"]?.map((p) => (
+                  <PartyChip key={`comprehensive-${p}`} party={p} />
+                ))}
               </label>
             </div>
 
@@ -252,6 +298,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🧾 Land Tax Transition</span>
+                {PRESET_PARTIES["land-tax-transition"]?.map((p) => (
+                  <PartyChip key={`land-tax-transition-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -261,6 +310,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🏦 Macroprudential Tightening</span>
+                {PRESET_PARTIES["macroprudential-tightening"]?.map((p) => (
+                  <PartyChip key={`macroprudential-tightening-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -270,6 +322,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🛏️ Short-Stay Clampdown</span>
+                {PRESET_PARTIES["short-stay-clampdown"]?.map((p) => (
+                  <PartyChip key={`short-stay-clampdown-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -279,6 +334,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🏘️ Public Housing Build</span>
+                {PRESET_PARTIES["public-housing-build"]?.map((p) => (
+                  <PartyChip key={`public-housing-build-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -288,6 +346,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🧳 Migration Shock (Lower)</span>
+                {PRESET_PARTIES["migration-shock-down"]?.map((p) => (
+                  <PartyChip key={`migration-shock-down-${p}`} party={p} />
+                ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
@@ -297,6 +358,9 @@ export function ControlsPanel() {
                   style={{ cursor: "pointer" }}
                 />
                 <span>🧪 All Levers (Stress Test)</span>
+                {PRESET_PARTIES["all-levers"]?.map((p) => (
+                  <PartyChip key={`all-levers-${p}`} party={p} />
+                ))}
               </label>
             </div>
 
@@ -394,10 +458,71 @@ export function ControlsPanel() {
             </select>
           </div>
         </div>
+
+        <div className="field" style={{ marginTop: 14 }}>
+          <label className="field-label">RBA policy path</label>
+          <label className="checkbox-field" style={{ marginTop: 6 }}>
+            <input
+              type="checkbox"
+              checked={autoRba}
+              onChange={(e) => setAutoRba(e.target.checked)}
+            />
+            <span>Auto‑select RBA response</span>
+          </label>
+          {autoRba && (
+            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+              {autoRbaMessage}
+            </div>
+          )}
+          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+            <select
+              value={ratePath.mode ?? "scenario"}
+              onChange={(e) =>
+                setRatePath({
+                  ...ratePath,
+                  mode: e.target.value as any,
+                })
+              }
+              className="select-field"
+              disabled={autoRba}
+            >
+              <option value="scenario">Scenario</option>
+              <option value="fixed">Fixed</option>
+              <option value="rule">RBA rule (simple)</option>
+            </select>
+            {ratePath.mode === "scenario" && (
+              <select
+                value={ratePath.scenario ?? "steady"}
+                onChange={(e) =>
+                  setRatePath({
+                    ...ratePath,
+                    scenario: e.target.value as any,
+                  })
+                }
+                className="select-field"
+                disabled={autoRba}
+              >
+                <option value="steady">Steady</option>
+                <option value="tighten">Tighten</option>
+                <option value="ease">Ease</option>
+                <option value="highForLonger">High for longer</option>
+                <option value="cutThenNormalize">Cut then normalize</option>
+              </select>
+            )}
+          </div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+            Base rate is aligned to the latest RBA cash rate if provided in historical data; otherwise it uses the city baseline mortgage rate.
+          </div>
+        </div>
       </ControlGroup>
 
       {/* Negative Gearing */}
       <ControlGroup title="Negative Gearing" icon="🔧" defaultOpen={true} tone="warning">
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {GROUP_PARTIES["Negative Gearing"].map((p) => (
+            <PartyChip key={`ng-${p}`} party={p} />
+          ))}
+        </div>
         <div className="field">
           <select
             value={params.policy.negativeGearingMode}
@@ -428,6 +553,11 @@ export function ControlsPanel() {
 
       {/* Ownership Cap */}
       <ControlGroup title="Ownership Cap" icon="🏠" defaultOpen={true} tone="success">
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {GROUP_PARTIES["Ownership Cap"].map((p) => (
+            <PartyChip key={`oc-${p}`} party={p} />
+          ))}
+        </div>
         <label className="checkbox-field">
           <input
             type="checkbox"
@@ -473,6 +603,11 @@ export function ControlsPanel() {
 
       {/* Supply & Demand */}
       <ControlGroup title="Supply & Demand" icon="📊" defaultOpen={false}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {GROUP_PARTIES["Supply & Demand"].map((p) => (
+            <PartyChip key={`sd-${p}`} party={p} />
+          ))}
+        </div>
         <SliderField
           label="Supply boost (–10% to +25%)"
           value={params.policy.supplyBoost * 100}
@@ -514,7 +649,12 @@ export function ControlsPanel() {
 
         {expertMode && (
           <>
-            <div style={{ fontWeight: 800, margin: "10px 0 6px" }}>Tax & investor incentives</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Tax & investor incentives</div>
+              {GROUP_PARTIES["Tax & investor incentives"].map((p) => (
+                <PartyChip key={`tax-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="CGT discount change (−25pp to +25pp)"
               value={policy.taxInvestor.cgtDiscountDelta * 100}
@@ -578,7 +718,12 @@ export function ControlsPanel() {
               tooltip={HELP.expert?.foreignBuyerRestrictionIntensity?.tooltip}
             />
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Credit / macro-prudential</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Credit / macro-prudential</div>
+              {GROUP_PARTIES["Credit / macro-prudential"].map((p) => (
+                <PartyChip key={`credit-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="Serviceability buffer delta (−2pp to +3pp)"
               value={policy.credit.serviceabilityBufferDelta * 100}
@@ -614,7 +759,12 @@ export function ControlsPanel() {
               tooltip={HELP.expert?.investorLendingLimitTightness?.tooltip}
             />
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Demand-side subsidies</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Demand-side subsidies</div>
+              {GROUP_PARTIES["Demand-side subsidies"].map((p) => (
+                <PartyChip key={`subsidies-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="First-home buyer subsidy intensity (0% to 100%)"
               value={policy.subsidies.firstHomeBuyerSubsidyIntensity * 100}
@@ -630,7 +780,12 @@ export function ControlsPanel() {
               tooltip={HELP.expert?.firstHomeBuyerSubsidyIntensity?.tooltip}
             />
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Rental settings</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Rental settings</div>
+              {GROUP_PARTIES["Rental settings"].map((p) => (
+                <PartyChip key={`rental-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="Rent assistance intensity (0% to 100%)"
               value={policy.rental.rentAssistanceIntensity * 100}
@@ -688,7 +843,12 @@ export function ControlsPanel() {
               <span>Vacancy decontrol (caps don’t bind on turnover)</span>
             </label>
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Planning / infrastructure</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Planning / infrastructure</div>
+              {GROUP_PARTIES["Planning / infrastructure"].map((p) => (
+                <PartyChip key={`planning-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="Upzoning intensity (0% to 100%)"
               value={policy.planning.upzoningIntensity * 100}
@@ -725,7 +885,12 @@ export function ControlsPanel() {
               tooltip={HELP.expert?.infrastructureLagYears?.tooltip}
             />
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Public & community housing</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Public & community housing</div>
+              {GROUP_PARTIES["Public & community housing"].map((p) => (
+                <PartyChip key={`public-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="Public housing build boost (0% to 20%)"
               value={policy.publicCommunity.publicHousingBuildBoost * 100}
@@ -772,7 +937,12 @@ export function ControlsPanel() {
               tooltip={HELP.expert?.conversionToSocialSharePerYear?.tooltip}
             />
 
-            <div style={{ fontWeight: 800, margin: "14px 0 6px" }}>Population</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 6px" }}>
+              <div style={{ fontWeight: 800 }}>Population</div>
+              {GROUP_PARTIES["Population"].map((p) => (
+                <PartyChip key={`pop-${p}`} party={p} />
+              ))}
+            </div>
             <SliderField
               label="Net overseas migration shock (−30% to +30%)"
               value={policy.migration.netOverseasMigrationShock * 100}

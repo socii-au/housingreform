@@ -13,6 +13,7 @@
  */
 
 import type { CityId } from "./regions";
+import type { RatePathConfig } from "./ratePath";
 
 export type Year = number;
 
@@ -226,6 +227,19 @@ export interface CityBaseState {
 
   medianPrice: number;
   medianAnnualRent: number;
+  /**
+   * Optional baseline nominal rent growth (e.g., 0.035 = 3.5%/yr).
+   * If omitted, defaults are inferred from history or a conservative proxy.
+   */
+  rentGrowthBaseline?: number;
+  /** Rent sensitivity to investor demand shocks (per 1.0 shock). */
+  rentElasticityToInvestorDemand?: number;
+  /** Rent sensitivity to supply growth delta (per 1.0 delta). */
+  rentElasticityToSupply?: number;
+  /** Rent sensitivity to population growth delta (per 1.0 delta). */
+  rentElasticityToPopulation?: number;
+  /** Rent sensitivity to wage growth delta (per 1.0 delta). */
+  rentElasticityToWage?: number;
 
   /** Median annual full-time wage for this city (AUD) */
   medianAnnualWage: number;
@@ -241,6 +255,21 @@ export interface CityBaseState {
   weight?: number;
 
   investorDwellingShare: number;
+
+  /** Insurance: annual base premium (ex tax) for owner-occupiers. */
+  annualHomeInsuranceBase?: number;
+  /** Insurance: annual base premium (ex tax) for landlords. */
+  annualLandlordInsuranceBase?: number;
+  /** Insurance: baseline inflation for premiums (typically CPI). */
+  insuranceInflationBaseline?: number;
+  /** Insurance: additional claims inflation above CPI. */
+  insuranceClaimsInflationPremium?: number;
+  /** Insurance: climate trend (annual, before multiplier). */
+  insuranceClimateTrend?: number;
+  /** Insurance: location-specific climate risk multiplier. */
+  climateRiskMultiplier?: number;
+  /** Insurance: effective tax/levy rate on premiums. */
+  insuranceTaxRateEffective?: number;
 }
 
 export type NegativeGearingMode = "none" | "remove" | "reverse";
@@ -350,6 +379,11 @@ export interface ScenarioParams {
   cities: CityBaseState[];
 
   policy: PolicyLevers | PolicyLeversV2;
+
+  /**
+   * Optional interest-rate path configuration (RBA-style scenarios or rules).
+   */
+  ratePath?: RatePathConfig;
 
   /**
    * Engine selection. Defaults to "aggregate" (backwards-compatible).

@@ -1,10 +1,9 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import methodologyMd from "../content/methodology.md?raw";
+import docsMd from "../content/docs.md?raw";
 
 function safeUri(uri: string): string {
   const u = (uri ?? "").trim();
-  // Block javascript: and data: by default. Allow relative and http(s).
   if (/^javascript:/i.test(u)) return "";
   if (/^data:/i.test(u)) return "";
   return u;
@@ -22,12 +21,12 @@ function downloadText(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-export function Methodology() {
+export function Docs() {
   return (
     <div>
-      <div className="h1">Methodology</div>
+      <div className="h1">Docs</div>
       <p className="muted" style={{ marginTop: 0 }}>
-        Plain-English summary of assumptions and limitations. All calculations are client-side and visible in code.
+        Full documentation of the model: terms, math, policies, assumptions, and validation.
         <span style={{ display: "block", marginTop: 6 }}>
           This model is a free tool developed by the not-for-profit consumer advocacy and research team at SOCii.
         </span>
@@ -36,40 +35,38 @@ export function Methodology() {
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
         <button
           type="button"
-          onClick={() => downloadText("housing-reform-model-methodology.md", methodologyMd)}
+          onClick={() => downloadText("housing-reform-model-docs.md", docsMd)}
           style={{
             padding: "10px 12px",
             borderRadius: 12,
             border: "1px solid var(--border)",
             background: "white",
             cursor: "pointer",
-            fontWeight: 650
+            fontWeight: 650,
           }}
         >
-          Download methodology summary
+          Download docs
         </button>
       </div>
 
-      <div className="card" style={{ padding: 16 }}>
+      <div className="card docs-content" style={{ padding: 16 }}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           skipHtml
           components={{
-            a: ({ node, href, ...props }) => {
+            a: ({ href, ...props }) => {
               const safe = safeUri(href ?? "");
               return <a {...props} href={safe} target="_blank" rel="noopener noreferrer" />;
             },
-            img: ({ node, src, ...props }) => {
+            img: ({ src, ...props }) => {
               const safe = safeUri(src ?? "");
               return <img {...props} src={safe} />;
             },
           }}
         >
-          {methodologyMd}
+          {docsMd}
         </ReactMarkdown>
       </div>
     </div>
   );
 }
-
-

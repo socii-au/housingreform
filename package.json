@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "extract-asgs": "tsx scripts/extract-asgs.ts",
-    "download-real-data": "tsx scripts/download-real-data.ts"
+    "download-real-data": "tsx scripts/download-real-data.ts",
+    "import-abs-history": "tsx scripts/import-abs-history.ts",
+    "fetch-abs-data": "tsx scripts/fetch-abs-data.ts"
   },
   "dependencies": {
     "convex": "^1.31.4",

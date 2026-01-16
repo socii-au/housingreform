@@ -185,6 +185,70 @@ textarea:focus-visible,
   box-shadow: var(--shadow);
 }
 
+/* Docs glossary table (high accessibility) */
+.docs-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.docs-content thead th {
+  background: #0f172a;
+  color: #ffffff;
+  text-align: left;
+  padding: 10px;
+  border: 1px solid #0f172a;
+}
+
+.docs-content tbody td {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.docs-content tbody tr:nth-child(odd) {
+  background: #f8fafc;
+}
+
+.docs-content tbody tr:nth-child(even) {
+  background: #ffffff;
+}
+
+.docs-content tbody tr {
+  border-top: 3px solid #1d4ed8;
+  box-shadow: inset 6px 0 0 #1d4ed8;
+}
+
+.docs-content tbody tr:nth-child(6n + 1) {
+  border-top-color: #0ea5e9;
+  box-shadow: inset 6px 0 0 #0ea5e9;
+}
+
+.docs-content tbody tr:nth-child(6n + 2) {
+  border-top-color: #22c55e;
+  box-shadow: inset 6px 0 0 #22c55e;
+}
+
+.docs-content tbody tr:nth-child(6n + 3) {
+  border-top-color: #f59e0b;
+  box-shadow: inset 6px 0 0 #f59e0b;
+}
+
+.docs-content tbody tr:nth-child(6n + 4) {
+  border-top-color: #8b5cf6;
+  box-shadow: inset 6px 0 0 #8b5cf6;
+}
+
+.docs-content tbody tr:nth-child(6n + 5) {
+  border-top-color: #ef4444;
+  box-shadow: inset 6px 0 0 #ef4444;
+}
+
+.docs-content tbody tr:nth-child(6n) {
+  border-top-color: #06b6d4;
+  box-shadow: inset 6px 0 0 #06b6d4;
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);

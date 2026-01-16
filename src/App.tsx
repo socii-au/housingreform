@@ -4,8 +4,7 @@ import { ModelProvider, useModel } from "./model/ModelContext";
 import { ExploreModel } from "./routes/ExploreModel";
 import { GuidedStory } from "./routes/GuidedStory";
 import { Methodology } from "./routes/Methodology";
-import { Sa3Map } from "./routes/Sa3Map";
-import { Sa3Admin } from "./routes/Sa3Admin";
+import { Docs } from "./routes/Docs";
 
 function Shell() {
   const navigate = useNavigate();
@@ -30,9 +29,8 @@ function Shell() {
               Guided Story
             </NavLink>
             <NavLink to="/explore">Explore the Model</NavLink>
-            <NavLink to="/sa3">SA3 Map</NavLink>
-            <NavLink to="/sa3-admin">SA3 Admin</NavLink>
             <NavLink to="/methodology">Methodology</NavLink>
+            <NavLink to="/docs">Docs</NavLink>
             <button
               type="button"
               onClick={() => {
@@ -51,9 +49,8 @@ function Shell() {
           <Routes>
             <Route path="/" element={<GuidedStory />} />
             <Route path="/explore" element={<ExploreModel />} />
-            <Route path="/sa3" element={<Sa3Map />} />
-            <Route path="/sa3-admin" element={<Sa3Admin />} />
             <Route path="/methodology" element={<Methodology />} />
+            <Route path="/docs" element={<Docs />} />
           </Routes>
         </div>
       </main>

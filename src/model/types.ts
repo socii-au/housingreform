@@ -36,6 +36,8 @@ export type {
   ScenarioParams,
 } from "./methodology";
 
+export type { RatePathConfig, RatePathMode, RateScenario } from "./ratePath";
+
 export { DEFAULT_CONSTANTS, DEFAULT_CURVES } from "./methodology";
 
 // Scenario output types from runScenario
