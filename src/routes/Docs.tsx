@@ -24,7 +24,7 @@ function downloadText(filename: string, text: string) {
 export function Docs() {
   return (
     <div>
-      <div className="h1">Docs</div>
+      <h1 className="h1">Docs</h1>
       <p className="muted" style={{ marginTop: 0 }}>
         Full documentation of the model: terms, math, policies, assumptions, and validation.
         <span style={{ display: "block", marginTop: 6 }}>

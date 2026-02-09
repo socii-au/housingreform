@@ -615,12 +615,14 @@ export function ExploreModel() {
                 Jump to a specific year; charts and map will highlight that year.
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <label htmlFor="explore-year-focus" className="sr-only">Focus year</label>
               <select
+                id="explore-year-focus"
                 className="select-field"
                 value={selectedYear}
                 onChange={(e) => setFocusYear(Number(e.target.value))}
-                aria-label="Select focus year"
+                aria-label="Select focus year for charts and map"
               >
                 {(chartSeries as any).map((p: any) => (
                   <option key={`yr-${p.year}`} value={p.year}>
@@ -632,7 +634,7 @@ export function ExploreModel() {
                 type="button"
                 className="btn-reset"
                 onClick={() => setFocusYear(null)}
-                title="Return to latest year"
+                aria-label="Return to latest year"
               >
                 Latest
               </button>

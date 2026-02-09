@@ -114,11 +114,13 @@ export function AssumptionsFooter() {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="assumptions-footer-details"
+            aria-label={open ? "Hide assumptions and transparency details" : "Show assumptions and transparency details"}
             style={{
-              padding: "8px 14px",
+              padding: "10px 14px",
+              minHeight: 44,
               borderRadius: 8,
               border: "1px solid var(--border)",
-              background: "white",
+              background: "var(--surface)",
               cursor: "pointer",
               fontWeight: 600,
               fontSize: 13,

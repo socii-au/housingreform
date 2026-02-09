@@ -25,7 +25,14 @@ function Shell() {
       <header className="topBar">
         <div className="container topBarInner">
           <div className="brand" aria-label="AIM-HR — Australian Independent Model for Housing Reform">
-            <div className="brandMark" aria-hidden="true" />
+            <img
+              src="/favicon.svg"
+              alt=""
+              className="brandMark"
+              width={92}
+              height={73}
+              aria-hidden="true"
+            />
             <div>
               <div className="brandTitle">AIM-HR</div>
               <div className="muted" style={{ fontSize: 12 }}>

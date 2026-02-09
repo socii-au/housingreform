@@ -180,7 +180,7 @@ export function GuidedStory() {
 
   return (
     <div>
-      <div className="h1">How housing policy affects the market</div>
+      <h1 className="h1">How housing policy affects the market</h1>
       <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
         A guided walkthrough of the model, showing cause → effect relationships for{" "}
         <strong>{scopeLabel(scope)}</strong>. Designed to make the model's logic transparent and

@@ -507,7 +507,7 @@ export function AustraliaCrisisMap(props: {
     <div className="card" style={{ padding: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <div className="h2" style={{ margin: 0 }}>{props.title ?? "National crisis heatmap"}</div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div role="group" aria-label="Map layer" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {(["sa2", "sa3", "sa4", "cities"] as const).map((layer) => {
             const labels: Record<MapLayer, string> = {
               sa2: sa2Data ? `SA2 (${sa2Count})` : "SA2 (loading)",
@@ -521,12 +521,15 @@ export function AustraliaCrisisMap(props: {
                 key={layer}
                 type="button"
                 onClick={() => setMapLayer(layer)}
+                aria-pressed={isActive}
+                aria-label={`Show ${labels[layer]} layer`}
                 style={{
-                  padding: "4px 10px",
+                  padding: "8px 12px",
+                  minHeight: 44,
                   fontSize: 12,
                   fontWeight: isActive ? 700 : 500,
                   background: isActive ? "var(--accent)" : "var(--surface-alt)",
-                  color: isActive ? "white" : "var(--fg)",
+                  color: isActive ? "white" : "var(--text)",
                   border: "1px solid var(--border)",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -557,25 +560,31 @@ export function AustraliaCrisisMap(props: {
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 14, alignItems: "start" }}>
         <div style={{ position: "relative", borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden", background: "white" }}>
           {/* Zoom controls */}
-          <div style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            background: "rgba(255,255,255,0.95)",
-            borderRadius: 8,
-            padding: 4,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          }}>
+          <div
+            role="group"
+            aria-label="Map zoom and pan"
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              zIndex: 10,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              background: "rgba(255,255,255,0.95)",
+              borderRadius: 8,
+              padding: 4,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+          >
             <button
+              type="button"
               onClick={zoomIn}
               disabled={zoom >= MAX_ZOOM}
+              aria-label="Zoom in (or use scroll wheel)"
               style={{
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 border: "1px solid var(--border)",
                 borderRadius: 6,
                 background: zoom >= MAX_ZOOM ? "#e5e7eb" : "white",
@@ -584,16 +593,17 @@ export function AustraliaCrisisMap(props: {
                 fontWeight: 700,
                 color: zoom >= MAX_ZOOM ? "#9ca3af" : "#0f172a",
               }}
-              title="Zoom in (or use scroll wheel)"
             >
               +
             </button>
             <button
+              type="button"
               onClick={zoomOut}
               disabled={zoom <= MIN_ZOOM}
+              aria-label="Zoom out (or use scroll wheel)"
               style={{
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 border: "1px solid var(--border)",
                 borderRadius: 6,
                 background: zoom <= MIN_ZOOM ? "#e5e7eb" : "white",
@@ -602,16 +612,17 @@ export function AustraliaCrisisMap(props: {
                 fontWeight: 700,
                 color: zoom <= MIN_ZOOM ? "#9ca3af" : "#0f172a",
               }}
-              title="Zoom out (or use scroll wheel)"
             >
               −
             </button>
             <button
+              type="button"
               onClick={resetView}
               disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
+              aria-label="Reset map view"
               style={{
-                width: 32,
-                height: 32,
+                width: 44,
+                height: 44,
                 border: "1px solid var(--border)",
                 borderRadius: 6,
                 background: (zoom === 1 && pan.x === 0 && pan.y === 0) ? "#e5e7eb" : "white",
@@ -620,7 +631,6 @@ export function AustraliaCrisisMap(props: {
                 fontWeight: 600,
                 color: (zoom === 1 && pan.x === 0 && pan.y === 0) ? "#9ca3af" : "#0f172a",
               }}
-              title="Reset view"
             >
               ⟲
             </button>
@@ -629,7 +639,7 @@ export function AustraliaCrisisMap(props: {
               textAlign: "center",
               color: "#6b7280",
               marginTop: 2,
-            }}>
+            }} aria-hidden="true">
               {zoom.toFixed(1)}×
             </div>
           </div>

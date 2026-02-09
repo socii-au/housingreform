@@ -56,6 +56,7 @@ function ControlGroup({
 }
 
 function SliderField({
+  id,
   label,
   value,
   min,
@@ -65,6 +66,7 @@ function SliderField({
   format,
   tooltip,
 }: {
+  id?: string;
   label: string;
   value: number;
   min: number;
@@ -75,19 +77,27 @@ function SliderField({
   tooltip?: string;
 }) {
   const formatted = format ? format(value) : String(value);
+  const inputId = id ?? `slider-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="slider-field">
       <div className="slider-field-label">
-        <span>{label}: <strong>{formatted}</strong></span>
+        <label htmlFor={inputId}>
+          {label}: <strong>{formatted}</strong>
+        </label>
         {tooltip && <InfoTooltip text={tooltip} />}
       </div>
       <input
+        id={inputId}
         type="range"
         min={min}
         max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={formatted}
       />
     </div>
   );
@@ -148,10 +158,15 @@ export function ControlsPanel() {
   const totalCitiesShown = citiesWithState.length;
 
   return (
-    <div className="controls-panel">
+    <div className="controls-panel" role="region" aria-labelledby="scenario-controls-heading">
       <div className="controls-header">
-        <h2 className="h3" style={{ margin: 0 }}>Scenario Controls</h2>
-        <button type="button" className="btn-reset" onClick={resetToDefaults}>
+        <h2 className="h3" style={{ margin: 0 }} id="scenario-controls-heading">Scenario Controls</h2>
+        <button
+          type="button"
+          className="btn-reset"
+          onClick={resetToDefaults}
+          aria-label="Reset all scenario settings to defaults"
+        >
           ↺ Reset
         </button>
       </div>
@@ -373,24 +388,27 @@ export function ControlsPanel() {
         </div>
 
         <div className="field">
-          <label className="field-label">Model engine</label>
+          <label className="field-label" htmlFor="control-engine">Model engine</label>
           <select
+            id="control-engine"
             value={engine ?? "aggregate"}
             onChange={(e) => setEngine(e.target.value as any)}
             className="select-field"
+            aria-describedby="control-engine-desc"
           >
             <option value="aggregate">⚡ Aggregate (fast)</option>
             <option value="advanced">🧠 Advanced (spatial + portfolio)</option>
           </select>
-          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+          <div id="control-engine-desc" className="muted" style={{ fontSize: 12, marginTop: 4 }}>
             Advanced mode couples cities via migration (spatial equilibrium) and adds heterogeneous expectations +
             investor portfolio allocation. Microdata (if provided) can replace the decile proxy for stress rates.
           </div>
         </div>
 
         <div className="field">
-          <label className="field-label">Geographic view</label>
+          <label className="field-label" htmlFor="control-scope">Geographic view</label>
           <select
+            id="control-scope"
             value={scopeValue}
             onChange={(e) => handleScopeChange(e.target.value)}
             className="select-field"
@@ -446,12 +464,14 @@ export function ControlsPanel() {
             Historical lines appear muted. Projections begin at the city baseline year.
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
-            <span className="muted" style={{ fontSize: 12 }}>Index base:</span>
+            <label htmlFor="control-history-index-base" className="muted" style={{ fontSize: 12 }}>Index base:</label>
             <select
+              id="control-history-index-base"
               value={historyIndexBase}
               onChange={(e) => setHistoryIndexBase(e.target.value as any)}
               className="select-field"
               style={{ maxWidth: 220 }}
+              aria-label="Index base year for historical overlay"
             >
               <option value="history">Year 2000 (or earliest available)</option>
               <option value="year0">Baseline year (model start)</option>
@@ -485,6 +505,7 @@ export function ControlsPanel() {
               }
               className="select-field"
               disabled={autoRba}
+              aria-label="RBA policy path mode"
             >
               <option value="scenario">Scenario</option>
               <option value="fixed">Fixed</option>
@@ -501,6 +522,7 @@ export function ControlsPanel() {
                 }
                 className="select-field"
                 disabled={autoRba}
+                aria-label="Interest rate scenario"
               >
                 <option value="steady">Steady</option>
                 <option value="tighten">Tighten</option>
@@ -524,7 +546,9 @@ export function ControlsPanel() {
           ))}
         </div>
         <div className="field">
+          <label className="field-label" htmlFor="control-ng-mode">Negative gearing mode</label>
           <select
+            id="control-ng-mode"
             value={params.policy.negativeGearingMode}
             onChange={(e) =>
               patchPolicy({ negativeGearingMode: e.target.value as NegativeGearingMode })

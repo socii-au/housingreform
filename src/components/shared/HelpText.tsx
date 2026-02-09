@@ -348,6 +348,7 @@ export function InfoTooltip({
   return (
     <abbr
       title={text}
+      aria-label={text}
       style={{
         textDecoration: "none",
         borderBottom: "1px dotted var(--border)",

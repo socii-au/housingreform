@@ -25,7 +25,7 @@ function downloadText(filename: string, text: string) {
 export function Methodology() {
   return (
     <div>
-      <div className="h1">Methodology</div>
+      <h1 className="h1">Methodology</h1>
       <p className="muted" style={{ marginTop: 0 }}>
         Plain-English summary of assumptions and limitations. All calculations are client-side and visible in code.
         <span style={{ display: "block", marginTop: 6 }}>
