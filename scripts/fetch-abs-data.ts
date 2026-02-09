@@ -125,9 +125,25 @@ async function fetchArcgisAllFeatures(opts: {
       `${base}?where=1%3D1&outFields=${encodeURIComponent(outFields.join(","))}` +
       `&returnGeometry=false&f=json&resultOffset=${offset}&resultRecordCount=${page}` +
       (opts.returnCentroid ? "&returnCentroid=true" : "");
-    const json = await fetchJson(url);
+    let json: any;
+    try {
+      const text = await fetchText(url);
+      if (text.includes("<html") || text.includes("<!DOCTYPE")) {
+        console.warn(`ArcGIS returned HTML (offset=${offset}), stopping pagination.`);
+        break;
+      }
+      json = JSON.parse(text);
+    } catch (e) {
+      console.warn(`ArcGIS query failed at offset=${offset}:`, e);
+      break;
+    }
+    if (json.error) {
+      console.warn(`ArcGIS error at offset=${offset}:`, json.error);
+      break;
+    }
     const feats = json.features || [];
     all.push(...feats);
+    console.log(`  fetched ${feats.length} features (total: ${all.length}, offset: ${offset})`);
     if (!json.exceededTransferLimit || feats.length === 0) break;
     offset += page;
   }
@@ -157,13 +173,13 @@ function parseRentBins(fields: Array<{ name: string; alias?: string }>) {
   fields.forEach((f) => {
     const name = f.name;
     if (!/^r_/.test(name) || !/_tot$/.test(name)) return;
-    const m = name.match(/^r_(\\d+)(?:_(\\d+))?_tot$/);
+    const m = name.match(/^r_(\d+)(?:_(\d+))?_tot$/);
     if (m) {
       const low = Number(m[1]);
       const high = m[2] ? Number(m[2]) : null;
       bins.push({ field: name, low, high });
     } else if (/over/i.test(name)) {
-      const lo = Number((name.match(/r_(\\d+)/) || [])[1]);
+      const lo = Number((name.match(/r_(\d+)/) || [])[1]);
       if (Number.isFinite(lo)) bins.push({ field: name, low: lo, high: null });
     }
   });
@@ -189,11 +205,21 @@ function medianFromBins(bins: Array<{ low: number; high: number | null; count: n
 }
 
 async function buildSa2Rent() {
+  console.log("Building sa2_rent.csv...");
   const serviceUrl = `${ARC}/ABS_2021_Census_G40_SA2/FeatureServer/0`;
-  const meta = await fetchJson(`${serviceUrl}?f=pjson`);
-  const bins = parseRentBins(meta.fields || []);
+  const metaText = await fetchText(`${serviceUrl}?f=pjson`);
+  const meta = JSON.parse(metaText);
+  const allFields = (meta.fields || []) as Array<{ name: string; alias?: string }>;
+  console.log(`  Meta fields count: ${allFields.length}`);
+  const rentTotFields = allFields.filter((f) => /^r_/.test(f.name) && /_tot$/.test(f.name));
+  console.log(`  Rent _tot fields: ${rentTotFields.length}`, rentTotFields.map((f) => f.name));
+  const bins = parseRentBins(allFields);
+  console.log(`  Rent bins found: ${bins.length}`);
+  if (bins.length === 0) { console.warn("  NO RENT BINS - aborting rent build"); return; }
   const outFields = ["sa2_code_2021", ...bins.map((b) => b.field)];
+  console.log(`  Querying features with ${outFields.length} fields...`);
   const feats = await fetchArcgisAllFeatures({ serviceUrl, outFields });
+  console.log(`  Total features: ${feats.length}`);
   const out = [["SA2_CODE", "YEAR", "MEDIAN_WEEKLY_RENT", "POP"]];
   feats.forEach((f) => {
     const code = f.attributes?.sa2_code_2021;
@@ -432,9 +458,59 @@ async function buildSa2CityMap() {
 }
 
 async function buildStatePriceIndex() {
-  const url = "https://api.data.abs.gov.au/data/RES_DWELL_ST/5..Q";
-  const xml = await fetchText(url);
-  const seriesBlocks = xml.split("<generic:Series>").slice(1);
+  console.log("Building state_price_index.csv...");
+  // Force SDMX-ML (XML) format — the API defaults to JSON if no format is specified
+  const url = "https://api.data.abs.gov.au/data/RES_DWELL_ST/5..Q?dimensionAtObservation=AllDimensions";
+  let rawText = await fetchText(url);
+  // If response is JSON, parse it differently
+  if (rawText.trimStart().startsWith("{")) {
+    console.log("  Received JSON response, parsing as SDMX-JSON...");
+    const json = JSON.parse(rawText);
+    const ds = json.dataSets?.[0] || json.data?.[0];
+    const dims = json.structure?.dimensions?.observation || [];
+    const regionDim = dims.findIndex((d: any) => d.id === "REGION");
+    const timeDim = dims.findIndex((d: any) => d.id === "TIME_PERIOD");
+    const regionValues = dims[regionDim]?.values || [];
+    const timeValues = dims[timeDim]?.values || [];
+    const regionMap: Record<string, string> = {};
+    regionValues.forEach((v: any, i: number) => {
+      const map: Record<string, string> = { "1": "NSW", "2": "VIC", "3": "QLD", "4": "SA", "5": "WA", "6": "TAS", "7": "NT", "8": "ACT" };
+      if (map[v.id]) regionMap[String(i)] = map[v.id];
+    });
+    const byYear: Record<number, Record<string, number[]>> = {};
+    const obs = ds?.observations || {};
+    for (const [key, val] of Object.entries(obs)) {
+      const parts = key.split(":");
+      const regionIdx = parts[regionDim];
+      const timeIdx = parts[timeDim];
+      const region = regionMap[regionIdx];
+      const timePeriod = timeValues[Number(timeIdx)]?.id || "";
+      const year = Number(timePeriod.slice(0, 4));
+      const value = (val as any)?.[0];
+      if (!region || !Number.isFinite(year) || !Number.isFinite(value)) continue;
+      byYear[year] = byYear[year] || {};
+      byYear[year][region] = byYear[year][region] || [];
+      byYear[year][region].push(value);
+    }
+    const out = [["YEAR", "NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"]];
+    Object.keys(byYear).sort().forEach((yStr) => {
+      const y = Number(yStr);
+      const row = [String(y)];
+      ["NSW","VIC","QLD","WA","SA","TAS","ACT","NT"].forEach((st) => {
+        const xs = byYear[y][st] || [];
+        const avg = xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : "";
+        row.push(avg ? String(avg) : "");
+      });
+      out.push(row);
+    });
+    console.log(`  Years: ${Object.keys(byYear).length}`);
+    writeCsv(path.join(RAW_DIR, "state_price_index.csv"), out);
+    return;
+  }
+  // Otherwise parse as XML
+  console.log(`  XML length: ${rawText.length}`);
+  const seriesBlocks = rawText.split("<generic:Series>").slice(1);
+  console.log(`  Series blocks: ${seriesBlocks.length}`);
   const byYear: Record<number, Record<string, number[]>> = {};
   const regionMap: Record<string, string> = {
     "1": "NSW",
@@ -447,10 +523,10 @@ async function buildStatePriceIndex() {
     "8": "ACT",
   };
   seriesBlocks.forEach((block) => {
-    const regMatch = block.match(/id=\\\"REGION\\\" value=\\\"([^\\\"]+)\\\"/);
+    const regMatch = block.match(/id="REGION" value="([^"]+)"/);
     const region = regMatch ? regionMap[regMatch[1]] : null;
     if (!region) return;
-    const obs = [...block.matchAll(/TIME_PERIOD\\\" value=\\\"(\\d{4})-Q(\\d)\\\"[^>]*>\\s*<generic:ObsValue value=\\\"([^\\\"]+)\\\"/g)];
+    const obs = [...block.matchAll(/TIME_PERIOD" value="(\d{4})-Q(\d)"[^>]*>\s*<generic:ObsValue value="([^"]+)"/g)];
     obs.forEach((m) => {
       const year = Number(m[1]);
       const val = Number(m[3]);

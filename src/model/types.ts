@@ -1,5 +1,5 @@
 /**
- * Centralised type exports for the housing reform model.
+ * Centralised type exports for AIM-HR.
  */
 
 // Region registry

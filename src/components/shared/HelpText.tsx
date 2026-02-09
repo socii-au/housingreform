@@ -1,5 +1,5 @@
 /**
- * Centralized helper text and tooltips for the Housing Reform Impact Explorer.
+ * Centralized helper text and tooltips for AIM-HR.
  * 
  * All explanatory content in one place for consistency and easier maintenance.
  */

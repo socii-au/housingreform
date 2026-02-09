@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
- * Housing Reform App — Methodology + Core Assumptions
+ * AIM-HR — Methodology + Core Assumptions
  *
  * - All constants, curves, default parameters, and core formulas live here.
  * - Scenario logic should call into these helpers rather than duplicating math.
@@ -404,12 +404,12 @@ export const DEFAULT_CONSTANTS: CoreConstants = {
   renterShare: 0.31,
   mortgagedOwnerShare: 0.36,
   typicalLVR: 0.80,
-  marketAdjustmentSpeed: 0.65,
+  marketAdjustmentSpeed: 0.45,
   caps: {
-    maxNominalPriceGrowth: 0.25,
-    maxNominalRentGrowth: 0.25,
-    minNominalPriceGrowth: -0.20,
-    minNominalRentGrowth: -0.15,
+    maxNominalPriceGrowth: 0.12,
+    maxNominalRentGrowth: 0.10,
+    minNominalPriceGrowth: -0.10,
+    minNominalRentGrowth: -0.08,
   },
   stampDutyEffectiveRate: 0.035,
   annualTurnoverRate: 0.055,
@@ -434,21 +434,43 @@ function softsign(x: number): number {
   return x / (1 + Math.abs(x));
 }
 
+/**
+ * Soft floor: replaces a hard clamp with a smooth curve that approaches but
+ * rarely reaches the hard floor. Uses softsign compression below a threshold.
+ *
+ * - Above `threshold`: returns x unchanged.
+ * - Below `threshold`: compresses toward `floor` using softsign (x/(1+|x|)).
+ * - Result asymptotically approaches `floor` but never reaches it.
+ *
+ * This prevents clustering where many cities hit the same hard clamp and
+ * produce identical CAGRs.
+ */
+function softFloor(x: number, threshold: number, floor: number): number {
+  if (x >= threshold) return x;
+  const range = threshold - floor;
+  if (range <= 0) return x;
+  const t = (threshold - x) / range;
+  return threshold - range * t / (1 + t);
+}
+
 export const DEFAULT_CURVES: Curves = {
   priceSupplyGap: (gap) => {
     const g = clamp(gap, -0.10, 0.10);
     const shortage = Math.max(0, g);
     const surplus = Math.min(0, g);
 
-    const shortageBoost = 3.2 * shortage + 18 * shortage * shortage;
-    const surplusDrag = 2.2 * surplus;
+    // Dampened coefficients to prevent runaway compounding over 20+ years.
+    // Max shortage contribution ~0.16 at gap=+10%, vs previous ~0.50.
+    const shortageBoost = 1.2 * shortage + 4 * shortage * shortage;
+    const surplusDrag = 1.4 * surplus;
     return shortageBoost + surplusDrag;
   },
 
   rentSupplyGap: (gap) => {
     const g = clamp(gap, -0.10, 0.10);
-    const shortageBoost = 2.0 * Math.max(0, g) + 10 * Math.max(0, g) ** 2;
-    const surplusDrag = 1.6 * Math.min(0, g);
+    // Dampened: max ~0.11 at gap=+10%, vs previous ~0.30.
+    const shortageBoost = 0.8 * Math.max(0, g) + 3 * Math.max(0, g) ** 2;
+    const surplusDrag = 1.0 * Math.min(0, g);
     return shortageBoost + surplusDrag;
   },
 
@@ -478,7 +500,7 @@ export const DEFAULT_CURVES: Curves = {
 };
 
 export function householdsFromPopulation(population: number, c: CoreConstants): number {
-  return population / c.personsPerHousehold;
+  return population / Math.max(0.1, c.personsPerHousehold);
 }
 
 export function amortizedAnnualPayment(opts: {
@@ -489,6 +511,7 @@ export function amortizedAnnualPayment(opts: {
   const { principal, annualRate, termYears } = opts;
   const r = annualRate;
   const n = termYears;
+  if (n <= 0) return principal;
   if (r <= 0) return principal / n;
   const factor = (r * (1 + r) ** n) / ((1 + r) ** n - 1);
   return principal * factor;
@@ -509,16 +532,90 @@ export function supplyGapRatio(opts: {
   return (demandHouseholds - dwellingStock) / dwellingStock;
 }
 
+/**
+ * Affordability feedback: when PTI is very high, demand self-corrects
+ * (buyers priced out), dampening further price growth.
+ * Returns a multiplier 0..1 applied to the gap signal.
+ */
+export function affordabilityDamping(opts: {
+  medianPrice: number;
+  medianAnnualWage: number;
+}): number {
+  const pti = opts.medianPrice / Math.max(1, opts.medianAnnualWage);
+  // Below 8x: no damping. 8x-16x: linear ramp. Above 16x: 70% damped.
+  if (pti <= 8) return 1;
+  if (pti >= 16) return 0.3;
+  return 1 - 0.7 * ((pti - 8) / 8);
+}
+
+/**
+ * Price floor: prevents prices from falling below construction cost / land floor.
+ * Returns a growth floor that softens as PTI approaches ~4x.
+ */
+export function priceFloorGrowth(opts: {
+  medianPrice: number;
+  medianAnnualWage: number;
+  inflation: number;
+}): number {
+  const pti = opts.medianPrice / Math.max(1, opts.medianAnnualWage);
+  // Below PTI 5x: push growth toward inflation (can't build cheaper than cost).
+  // Above PTI 6x: no floor effect.
+  if (pti >= 6) return -1; // no floor binding
+  const floor = opts.inflation * clamp((6 - pti) / 2, 0, 1);
+  return floor;
+}
+
+/**
+ * Rent floor: rent should not fall below ~20% of wages long-term.
+ */
+export function rentFloorGrowth(opts: {
+  medianAnnualRent: number;
+  medianAnnualWage: number;
+  inflation: number;
+}): number {
+  const rentShare = opts.medianAnnualRent / Math.max(1, opts.medianAnnualWage);
+  if (rentShare >= 0.22) return -1; // no floor binding
+  // Push rent growth toward inflation when rent share is very low
+  const floor = opts.inflation * clamp((0.22 - rentShare) / 0.05, 0, 1);
+  return floor;
+}
+
 export function computeNominalPriceGrowth(opts: {
   baselinePriceGrowth: number;
   gapRatio: number;
   c: CoreConstants;
   curves: Curves;
+  medianPrice?: number;
+  medianAnnualWage?: number;
+  inflation?: number;
 }): number {
   const { baselinePriceGrowth, gapRatio, c, curves } = opts;
   const delta = curves.priceSupplyGap(gapRatio);
-  const raw = baselinePriceGrowth + c.marketAdjustmentSpeed * delta;
-  return clamp(raw, c.caps.minNominalPriceGrowth, c.caps.maxNominalPriceGrowth);
+  // Apply affordability damping to the gap signal
+  const damping = (opts.medianPrice && opts.medianAnnualWage)
+    ? affordabilityDamping({ medianPrice: opts.medianPrice, medianAnnualWage: opts.medianAnnualWage })
+    : 1;
+  // Baseline growth damping for extreme unaffordability:
+  // When PTI is very high (>14x), even baseline growth slows as buyers are priced out.
+  const baselineDamping = (opts.medianPrice && opts.medianAnnualWage)
+    ? (() => {
+        const pti = opts.medianPrice! / Math.max(1, opts.medianAnnualWage!);
+        if (pti <= 14) return 1;
+        if (pti >= 25) return 0.25;
+        return 1 - 0.75 * ((pti - 14) / 11);
+      })()
+    : 1;
+  const raw = baselinePriceGrowth * baselineDamping + c.marketAdjustmentSpeed * delta * damping;
+  // Soft min clamp: use softFloor to prevent clustering at a single negative CAGR.
+  // Hard cap on upside; soft approach to -10% floor on downside.
+  const maxCapped = Math.min(raw, c.caps.maxNominalPriceGrowth);
+  const clamped = softFloor(maxCapped, -0.03, c.caps.minNominalPriceGrowth);
+  // Apply price floor
+  if (opts.medianPrice && opts.medianAnnualWage && opts.inflation != null) {
+    const floor = priceFloorGrowth({ medianPrice: opts.medianPrice, medianAnnualWage: opts.medianAnnualWage, inflation: opts.inflation });
+    if (floor >= 0 && clamped < floor) return floor;
+  }
+  return clamped;
 }
 
 export function computeNominalRentGrowth(opts: {
@@ -527,11 +624,44 @@ export function computeNominalRentGrowth(opts: {
   c: CoreConstants;
   curves: Curves;
   rentGrowthModifier: number;
+  medianAnnualRent?: number;
+  medianAnnualWage?: number;
+  inflation?: number;
 }): number {
   const { baselineRentGrowth, gapRatio, c, curves, rentGrowthModifier } = opts;
   const delta = curves.rentSupplyGap(gapRatio);
-  const raw = baselineRentGrowth + c.marketAdjustmentSpeed * delta + rentGrowthModifier;
-  return clamp(raw, c.caps.minNominalRentGrowth, c.caps.maxNominalRentGrowth);
+  // Apply rent affordability damping: when rent burden is already high, rent growth decelerates
+  // (tenants leave, vacancies rise, landlords compete).
+  const rentDamping = (opts.medianAnnualRent && opts.medianAnnualWage)
+    ? (() => {
+        const rb = opts.medianAnnualRent! / Math.max(1, opts.medianAnnualWage!);
+        // Below 35%: no damping. 35%-50%: linear ramp. Above 50%: 60% damped.
+        if (rb <= 0.35) return 1;
+        if (rb >= 0.50) return 0.4;
+        return 1 - 0.6 * ((rb - 0.35) / 0.15);
+      })()
+    : 1;
+  // Baseline rent growth damping for extreme rent burden:
+  // When rent exceeds ~40% of wages, baseline rent growth itself slows
+  // (tenants leave, vacancies rise, market self-corrects).
+  const baselineRentDamping = (opts.medianAnnualRent && opts.medianAnnualWage)
+    ? (() => {
+        const rb = opts.medianAnnualRent! / Math.max(1, opts.medianAnnualWage!);
+        if (rb <= 0.40) return 1;
+        if (rb >= 0.55) return 0.3;
+        return 1 - 0.7 * ((rb - 0.40) / 0.15);
+      })()
+    : 1;
+  const raw = baselineRentGrowth * baselineRentDamping + c.marketAdjustmentSpeed * delta * rentDamping + rentGrowthModifier;
+  // Soft min clamp for rent: prevents clustering at the hard floor.
+  const maxCappedRent = Math.min(raw, c.caps.maxNominalRentGrowth);
+  const clamped = softFloor(maxCappedRent, -0.02, c.caps.minNominalRentGrowth);
+  // Apply rent floor
+  if (opts.medianAnnualRent && opts.medianAnnualWage && opts.inflation != null) {
+    const floor = rentFloorGrowth({ medianAnnualRent: opts.medianAnnualRent, medianAnnualWage: opts.medianAnnualWage, inflation: opts.inflation });
+    if (floor >= 0 && clamped < floor) return floor;
+  }
+  return clamped;
 }
 
 export function computeCompletionsNextYear(opts: {

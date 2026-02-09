@@ -736,8 +736,8 @@ export const AU_STATE_SUBREGIONS_GEOJSON: FeatureCollection<{
       [610, 140], [650, 140], [720, 260], [760, 420], [610, 420], [610, 140],
     ]] } },
     { type: "Feature", properties: { id: "QLD:remote", state: "QLD", label: "remote" }, geometry: { type: "Polygon", coordinates: [[
-      [610, 140], [650, 140], [610, 140],
-    ]] } }, // tiny placeholder; QLD already well-covered by cities
+      [610, 140], [660, 140], [660, 200], [610, 200], [610, 140],
+    ]] } }, // Western QLD interior (sparse population)
 
     // NSW
     { type: "Feature", properties: { id: "NSW:coastal", state: "NSW", label: "coastal" }, geometry: { type: "Polygon", coordinates: [[

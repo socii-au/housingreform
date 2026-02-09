@@ -73,3 +73,10 @@ export interface PolicyContext {
   policy: PolicyLeversV2;
 }
 
+/** Phase-in ramp: 0 at yearIndex=0, 1 at yearIndex>=rampYears. */
+export function policyRamp(ctx: PolicyContext): number {
+  const rampYears = ctx.policy.rampYears ?? 0;
+  if (rampYears <= 0) return 1;
+  return Math.min(1, (ctx.yearIndex + 1) / rampYears);
+}
+

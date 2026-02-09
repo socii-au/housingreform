@@ -1,6 +1,6 @@
-# Methodology (scenario explainer, not a forecast)
+# AIM-HR Methodology (scenario explainer, not a forecast)
 
-This app is a **scenario explainer**. It is designed to help users reason about **directional cause → effect** relationships in housing policy using **transparent, adjustable assumptions**.
+AIM-HR is a **scenario explainer**. It is designed to help users reason about **directional cause → effect** relationships in housing policy using **transparent, adjustable assumptions**.
 
 ## What we output (and what we avoid)
 
@@ -116,7 +116,7 @@ Charts can index the full timeline to either:
 
 ### Transparency and warnings
 
-When historical data is missing or heavily imputed, the app surfaces warnings in the Explore view and in the Trust & transparency footer so it’s clear which parts of the timeline are observed versus inferred.
+When historical data is missing or heavily imputed, AIM-HR surfaces warnings in the Explore view and in the Trust & transparency footer so it’s clear which parts of the timeline are observed versus inferred.
 
 ## Microdata (ABS SIH/CSHCV-derived, HILDA, synthetic reinforcement)
 

@@ -1,10 +1,10 @@
-# Security notes (client-side simulation app)
+# Security notes (AIM-HR — client-side simulation)
 
-This app is a **client-side** housing simulation and visualization tool. There is no server-side API in this repo; the primary risks are **XSS**, **prototype pollution**, and **denial-of-service** from extremely large or malformed inputs.
+AIM-HR is a **client-side** housing simulation and visualization tool. There is no server-side API in this repo; the primary risks are **XSS**, **prototype pollution**, and **denial-of-service** from extremely large or malformed inputs.
 
 ## Threat model
 
-- **Untrusted data** may enter the app via:
+- **Untrusted data** may enter AIM-HR via:
   - microdata (`rawByCity`, inferred mappings, weights)
   - historical bundles (`historyBundle`)
   - any future “paste JSON / upload file” features

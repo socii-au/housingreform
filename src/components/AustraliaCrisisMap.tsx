@@ -75,6 +75,7 @@ const CITY_POINTS: CityPoint[] = [
   { cityId: "GRF", x: 740, y: 560, r: 24 },
   { cityId: "LET", x: 760, y: 550, r: 22 },
   { cityId: "WOL", x: 845, y: 555, r: 34 },
+  { cityId: "NRA", x: 830, y: 570, r: 28 },
   { cityId: "CCS", x: 870, y: 500, r: 32 },
   { cityId: "ALW", x: 760, y: 595, r: 36 },
   { cityId: "WGA", x: 700, y: 575, r: 28 },

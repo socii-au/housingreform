@@ -24,12 +24,12 @@ function Shell() {
     <div className="appShell">
       <header className="topBar">
         <div className="container topBarInner">
-          <div className="brand" aria-label="Housing Reform Impact Explorer">
+          <div className="brand" aria-label="AIM-HR — Australian Independent Model for Housing Reform">
             <div className="brandMark" aria-hidden="true" />
             <div>
-              <div className="brandTitle">Housing Reform Impact Explorer</div>
+              <div className="brandTitle">AIM-HR</div>
               <div className="muted" style={{ fontSize: 12 }}>
-                Scenario explainer (not a forecast)
+                Australian Independent Model for Housing Reform
               </div>
             </div>
           </div>

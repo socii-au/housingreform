@@ -1,0 +1,318 @@
+{
+  "SYD": {
+    "medianPrice": 1190000,
+    "medianAnnualRent": 39500
+  },
+  "MEL": {
+    "medianPrice": 780000,
+    "medianAnnualRent": 30100
+  },
+  "BNE": {
+    "medianPrice": 900000,
+    "medianAnnualRent": 33300,
+    "medianAnnualWage": 87000
+  },
+  "PER": {
+    "medianPrice": 806000,
+    "medianAnnualRent": 34700
+  },
+  "ADL": {
+    "medianPrice": 828000,
+    "medianAnnualRent": 30700,
+    "medianAnnualWage": 82000
+  },
+  "HBA": {
+    "medianPrice": 657000,
+    "medianAnnualRent": 28400,
+    "medianAnnualWage": 78000
+  },
+  "DRW": {
+    "medianPrice": 530000,
+    "medianAnnualRent": 31200
+  },
+  "CBR": {
+    "medianPrice": 854000,
+    "medianAnnualRent": 34800
+  },
+  "NCL": {
+    "medianPrice": 900000,
+    "medianAnnualRent": 32500
+  },
+  "WOL": {
+    "medianPrice": 1100000,
+    "medianAnnualRent": 36800
+  },
+  "ALW": {
+    "medianPrice": 580000,
+    "medianAnnualRent": 26000
+  },
+  "CCS": {
+    "medianPrice": 870000,
+    "medianAnnualRent": 30000
+  },
+  "WGA": {
+    "medianPrice": 550000,
+    "medianAnnualRent": 26500
+  },
+  "COF": {
+    "medianPrice": 720000,
+    "medianAnnualRent": 28600
+  },
+  "PMQ": {
+    "medianPrice": 680000,
+    "medianAnnualRent": 27600
+  },
+  "TMW": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 26000
+  },
+  "DBO": {
+    "medianPrice": 520000,
+    "medianAnnualRent": 25000
+  },
+  "ORG": {
+    "medianPrice": 580000,
+    "medianAnnualRent": 26000
+  },
+  "BTH": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 26000
+  },
+  "GOU": {
+    "medianPrice": 600000,
+    "medianAnnualRent": 27000
+  },
+  "LSM": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 26500
+  },
+  "PST": {
+    "medianPrice": 750000,
+    "medianAnnualRent": 29000
+  },
+  "TAR": {
+    "medianPrice": 540000,
+    "medianAnnualRent": 25500
+  },
+  "FOS": {
+    "medianPrice": 680000,
+    "medianAnnualRent": 27500
+  },
+  "KPS": {
+    "medianPrice": 510000,
+    "medianAnnualRent": 25000
+  },
+  "NMB": {
+    "medianPrice": 490000,
+    "medianAnnualRent": 24500
+  },
+  "NRA": {
+    "medianPrice": 780000,
+    "medianAnnualRent": 29500
+  },
+  "TWD": {
+    "medianPrice": 850000,
+    "medianAnnualRent": 30500
+  },
+  "BLN": {
+    "medianPrice": 830000,
+    "medianAnnualRent": 30000
+  },
+  "BYR": {
+    "medianPrice": 2350000,
+    "medianAnnualRent": 54600
+  },
+  "GRF": {
+    "medianPrice": 470000,
+    "medianAnnualRent": 24000
+  },
+  "LET": {
+    "medianPrice": 440000,
+    "medianAnnualRent": 23000
+  },
+  "GEL": {
+    "medianPrice": 742000,
+    "medianAnnualRent": 27300
+  },
+  "BAL": {
+    "medianPrice": 570000,
+    "medianAnnualRent": 25500
+  },
+  "BEN": {
+    "medianPrice": 540000,
+    "medianAnnualRent": 25000
+  },
+  "SHP": {
+    "medianPrice": 510000,
+    "medianAnnualRent": 25500
+  },
+  "MLD": {
+    "medianPrice": 450000,
+    "medianAnnualRent": 24500
+  },
+  "WAR": {
+    "medianPrice": 550000,
+    "medianAnnualRent": 26000
+  },
+  "TRG": {
+    "medianPrice": 480000,
+    "medianAnnualRent": 24500
+  },
+  "HOR": {
+    "medianPrice": 390000,
+    "medianAnnualRent": 23000
+  },
+  "WGR": {
+    "medianPrice": 510000,
+    "medianAnnualRent": 24500
+  },
+  "SAL": {
+    "medianPrice": 450000,
+    "medianAnnualRent": 23500
+  },
+  "GC": {
+    "medianPrice": 1100000,
+    "medianAnnualRent": 44200
+  },
+  "SC": {
+    "medianPrice": 1080000,
+    "medianAnnualRent": 39300
+  },
+  "TSV": {
+    "medianPrice": 523000,
+    "medianAnnualRent": 28600
+  },
+  "CNS": {
+    "medianPrice": 613000,
+    "medianAnnualRent": 36200,
+    "medianAnnualWage": 74000
+  },
+  "TWB": {
+    "medianPrice": 590000,
+    "medianAnnualRent": 27500
+  },
+  "IPS": {
+    "medianPrice": 660000,
+    "medianAnnualRent": 29500
+  },
+  "MKY": {
+    "medianPrice": 500000,
+    "medianAnnualRent": 27500
+  },
+  "ROP": {
+    "medianPrice": 440000,
+    "medianAnnualRent": 25500
+  },
+  "BDG": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 28000
+  },
+  "GYP": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 26000
+  },
+  "MBH": {
+    "medianPrice": 470000,
+    "medianAnnualRent": 24500
+  },
+  "HVB": {
+    "medianPrice": 600000,
+    "medianAnnualRent": 29000
+  },
+  "GLA": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 28500
+  },
+  "BUN": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 29000
+  },
+  "KAL": {
+    "medianPrice": 420000,
+    "medianAnnualRent": 25500
+  },
+  "GER": {
+    "medianPrice": 470000,
+    "medianAnnualRent": 26000
+  },
+  "ALB": {
+    "medianPrice": 460000,
+    "medianAnnualRent": 25000
+  },
+  "BRO": {
+    "medianPrice": 680000,
+    "medianAnnualRent": 34000
+  },
+  "KAR": {
+    "medianPrice": 740000,
+    "medianAnnualRent": 36500
+  },
+  "PHD": {
+    "medianPrice": 680000,
+    "medianAnnualRent": 35000
+  },
+  "NWM": {
+    "medianPrice": 580000,
+    "medianAnnualRent": 33000
+  },
+  "TMP": {
+    "medianPrice": 560000,
+    "medianAnnualRent": 32000
+  },
+  "MTG": {
+    "medianPrice": 460000,
+    "medianAnnualRent": 24500
+  },
+  "WHY": {
+    "medianPrice": 350000,
+    "medianAnnualRent": 21500
+  },
+  "PLN": {
+    "medianPrice": 500000,
+    "medianAnnualRent": 24000
+  },
+  "PPR": {
+    "medianPrice": 340000,
+    "medianAnnualRent": 21000
+  },
+  "PAG": {
+    "medianPrice": 360000,
+    "medianAnnualRent": 21500
+  },
+  "MBR": {
+    "medianPrice": 470000,
+    "medianAnnualRent": 24000
+  },
+  "VHB": {
+    "medianPrice": 630000,
+    "medianAnnualRent": 25500
+  },
+  "NRC": {
+    "medianPrice": 380000,
+    "medianAnnualRent": 22000
+  },
+  "LST": {
+    "medianPrice": 550000,
+    "medianAnnualRent": 26000
+  },
+  "DVP": {
+    "medianPrice": 450000,
+    "medianAnnualRent": 23500
+  },
+  "BUR": {
+    "medianPrice": 420000,
+    "medianAnnualRent": 23000
+  },
+  "ASP": {
+    "medianPrice": 460000,
+    "medianAnnualRent": 28600
+  },
+  "KAT": {
+    "medianPrice": 410000,
+    "medianAnnualRent": 27000
+  },
+  "TNC": {
+    "medianPrice": 340000,
+    "medianAnnualRent": 24000
+  }
+}

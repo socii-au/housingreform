@@ -1,4 +1,4 @@
-# Housing Reform Model Documentation
+# AIM-HR Documentation
 
 ## 1. Introduction
 

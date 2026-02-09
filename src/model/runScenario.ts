@@ -213,6 +213,9 @@ function computeRentSeries(opts: {
   rentGrowthModifier: number;
   rentGrowthCap: number | null;
   rentRegulationCoverage: number;
+  vacancyDecontrol: boolean;
+  medianAnnualWage?: number;
+  inflation?: number;
 }): {
   nextRent: number;
   nominalRentGrowth: number;
@@ -252,12 +255,21 @@ function computeRentSeries(opts: {
     c,
     curves,
     rentGrowthModifier,
+    medianAnnualRent: opts.prevRent,
+    medianAnnualWage: opts.medianAnnualWage,
+    inflation: opts.inflation,
   });
 
+  // Vacancy decontrol: caps only bind on lease renewals (~65% of tenancies),
+  // not on new leases/turnover (~35% annual turnover rate).
+  const effectiveCoverage = opts.vacancyDecontrol
+    ? rentRegulationCoverage * 0.65
+    : rentRegulationCoverage;
+
   const cappedRentGrowth =
-    rentGrowthCap != null && rentRegulationCoverage > 0
-      ? (1 - rentRegulationCoverage) * nominalRentGrowth +
-        rentRegulationCoverage * Math.min(nominalRentGrowth, rentGrowthCap)
+    rentGrowthCap != null && effectiveCoverage > 0
+      ? (1 - effectiveCoverage) * nominalRentGrowth +
+        effectiveCoverage * Math.min(nominalRentGrowth, rentGrowthCap)
       : nominalRentGrowth;
 
   return {
@@ -619,10 +631,14 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         config: params.advanced?.portfolio,
       });
 
-      const combinedInvestorMult =
+      // Clamp combined investor multiplier to prevent unrealistic compounding
+      // when multiple policies target the same investor population.
+      const combinedInvestorMult = clamp(
         investorChannels.investorDemandMultiplier *
         portfolioMult *
-        policyChannels.investorDemandMultiplier;
+        policyChannels.investorDemandMultiplier,
+        0.75, 1.15
+      );
       const rateMult = rateDemandMultiplier({ baseRate: s.baseRate, currentRate: s.mortgageRate });
       demandHouseholds = demandHouseholds * combinedInvestorMult * rateMult;
 
@@ -632,14 +648,16 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       const wageGrowthBase = base.wageGrowthRate ?? 0.03;
       const wageGrowth = curves.wageGrowth(s.year, wageGrowthBase);
       const inflation = curves.inflation(s.year, BASELINE_INFLATION);
-      s.mortgageRate = computeRatePath({
-        yearIndex: t,
-        prevRate: s.mortgageRate,
-        inflation,
-        outputGap: clamp(gapRatio, -0.05, 0.05),
-        config: params.ratePath ? { ...params.ratePath, baseRate: s.baseRate } : undefined,
-      });
-      s.mortgageRate = Math.max(0, s.mortgageRate + (policy.mortgageRateDelta ?? 0));
+      const effectiveBaseRate = s.baseRate + (policy.mortgageRateDelta ?? 0);
+      s.mortgageRate = params.ratePath
+        ? computeRatePath({
+            yearIndex: t,
+            prevRate: s.mortgageRate,
+            inflation,
+            outputGap: clamp(gapRatio, -0.05, 0.05),
+            config: { ...params.ratePath, baseRate: effectiveBaseRate },
+          })
+        : Math.max(0, effectiveBaseRate);
       s.wageIndex = s.wageIndex * (1 + wageGrowth);
       s.cpiIndex = s.cpiIndex * (1 + inflation);
       s.medianAnnualWage = s.medianAnnualWage * (1 + wageGrowth);
@@ -649,6 +667,9 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         gapRatio,
         c,
         curves,
+        medianPrice: s.medianPrice,
+        medianAnnualWage: s.medianAnnualWage,
+        inflation,
       });
 
       const completionsNext = computeCompletionsNextYear({
@@ -678,7 +699,7 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       s.dwellingStock = Math.max(0, s.dwellingStock + s.completions - demolitions);
 
       const baselineSupplyGrowthRate =
-        (base.annualCompletions - base.demolitionRate * s.dwellingStock) / Math.max(1, s.dwellingStock);
+        (base.annualCompletions - base.demolitionRate * base.dwellingStock) / Math.max(1, base.dwellingStock);
       const supplyGrowthRate =
         (completionsNextCapped - demolitions) / Math.max(1, s.dwellingStock);
       const supplyGrowthDelta = supplyGrowthRate - baselineSupplyGrowthRate;
@@ -692,8 +713,11 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
       const populationGrowthDelta = populationGrowthRate - baselinePopGrowthRate;
       const wageGrowthDelta = wageGrowth - (base.wageGrowthRate ?? 0.03);
 
+      // Divestment reduces rental supply but also reduces rental demand
+      // (former renters become owners). Net effect is partial, not full supply shock.
+      const divestDemandOffset = investorChannels.divestedDwellingsShare * c.divestmentToOwnerOccupierShare * c.renterShare;
       const rentGapRatio =
-        gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
+        gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare - divestDemandOffset;
       const investorDemandShock = clamp(1 - combinedInvestorMult, -0.2, 0.4);
       const rentResult = computeRentSeries({
         base,
@@ -710,6 +734,9 @@ function runScenarioCoupledAdvanced(params: ScenarioParams): ScenarioOutputs {
         rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
         rentGrowthCap: policyChannels.rentGrowthCap,
         rentRegulationCoverage: policyChannels.rentRegulationCoverage,
+        vacancyDecontrol: policyChannels.vacancyDecontrol,
+        medianAnnualWage: s.medianAnnualWage,
+        inflation,
       });
 
       s.medianPrice = s.medianPrice * (1 + nominalPriceGrowth);
@@ -1149,9 +1176,15 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       dwellingStock,
     });
 
-    const combinedInvestorMult =
-      investorChannels.investorDemandMultiplier * policyChannels.investorDemandMultiplier;
-    const rateMult = rateDemandMultiplier({ baseRate, currentRate: mortgageRate });
+    const effectiveBaseRate = baseRate + (policy.mortgageRateDelta ?? 0);
+
+    // Clamp combined investor multiplier to prevent unrealistic compounding
+    // when multiple policies target the same investor population.
+    const combinedInvestorMult = clamp(
+      investorChannels.investorDemandMultiplier * policyChannels.investorDemandMultiplier,
+      0.75, 1.15
+    );
+    const rateMult = rateDemandMultiplier({ baseRate: effectiveBaseRate, currentRate: mortgageRate });
     demandHouseholds = demandHouseholds * combinedInvestorMult * rateMult;
 
     const effectiveStockForGap = dwellingStock * (1 + investorChannels.divestedDwellingsShare);
@@ -1159,14 +1192,15 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
 
     const wageGrowth = curves.wageGrowth(year, BASELINE_WAGE_GROWTH);
     const inflation = curves.inflation(year, BASELINE_INFLATION);
-    mortgageRate = computeRatePath({
-      yearIndex: i,
-      prevRate: mortgageRate,
-      inflation,
-      outputGap: clamp(gapRatio, -0.05, 0.05),
-      config: params.ratePath ? { ...params.ratePath, baseRate } : undefined,
-    });
-    mortgageRate = Math.max(0, mortgageRate + (policy.mortgageRateDelta ?? 0));
+    mortgageRate = params.ratePath
+      ? computeRatePath({
+          yearIndex: i,
+          prevRate: mortgageRate,
+          inflation,
+          outputGap: clamp(gapRatio, -0.05, 0.05),
+          config: { ...params.ratePath, baseRate: effectiveBaseRate },
+        })
+      : Math.max(0, effectiveBaseRate);
     wageIndex = wageIndex * (1 + wageGrowth);
     cpiIndex = cpiIndex * (1 + inflation);
     medianAnnualWage = medianAnnualWage * (1 + wageGrowth);
@@ -1176,6 +1210,9 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       gapRatio,
       c,
       curves,
+      medianPrice,
+      medianAnnualWage,
+      inflation,
     });
 
     const completionsNext = computeCompletionsNextYear({
@@ -1205,7 +1242,7 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
     dwellingStock = Math.max(0, dwellingStock + completions - demolitions);
 
     const baselineSupplyGrowthRate =
-      (base.annualCompletions - base.demolitionRate * dwellingStock) / Math.max(1, dwellingStock);
+      (base.annualCompletions - base.demolitionRate * base.dwellingStock) / Math.max(1, base.dwellingStock);
     const supplyGrowthRate =
       (completionsNextCapped - demolitions) / Math.max(1, dwellingStock);
     const supplyGrowthDelta = supplyGrowthRate - baselineSupplyGrowthRate;
@@ -1219,8 +1256,11 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
     const populationGrowthDelta = populationGrowthRate - baselinePopGrowthRate;
     const wageGrowthDelta = wageGrowth - (base.wageGrowthRate ?? BASELINE_WAGE_GROWTH);
 
+    // Divestment reduces rental supply but also reduces rental demand
+    // (former renters become owners). Net effect is partial, not full supply shock.
+    const divestDemandOffset = investorChannels.divestedDwellingsShare * c.divestmentToOwnerOccupierShare * c.renterShare;
     const rentGapRatio =
-      gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare;
+      gapRatio + investorChannels.rentalSupplyShockShare + policyChannels.rentalSupplyShockShare - divestDemandOffset;
     const investorDemandShock = clamp(1 - combinedInvestorMult, -0.2, 0.4);
     const rentResult = computeRentSeries({
       base,
@@ -1237,6 +1277,9 @@ function runCity(params: ScenarioParams, cityIndex: number): CityScenarioOutputs
       rentGrowthModifier: (policy.rentGrowthModifier ?? 0) + policyChannels.rentGrowthModifier,
       rentGrowthCap: policyChannels.rentGrowthCap,
       rentRegulationCoverage: policyChannels.rentRegulationCoverage,
+      vacancyDecontrol: policyChannels.vacancyDecontrol,
+      medianAnnualWage,
+      inflation,
     });
 
     medianPrice = medianPrice * (1 + nominalPriceGrowth);

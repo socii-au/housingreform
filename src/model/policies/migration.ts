@@ -1,5 +1,5 @@
 import type { PolicyContext } from "./types";
-import { emptyDelta, type PolicyChannelDelta } from "./types";
+import { emptyDelta, policyRamp, type PolicyChannelDelta } from "./types";
 
 function clamp(x: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, x));
@@ -13,10 +13,10 @@ function clamp(x: number, lo: number, hi: number): number {
  */
 export function migrationChannels(ctx: PolicyContext): PolicyChannelDelta {
   const d = emptyDelta();
-  const m = clamp(ctx.policy.migration.netOverseasMigrationShock, -0.30, 0.30);
+  const ramp = policyRamp(ctx);
+  const m = clamp(ctx.policy.migration.netOverseasMigrationShock, -0.30, 0.30) * ramp;
   if (m !== 0) {
     d.netMigrationMultiplier *= 1 + m;
   }
   return d;
 }
-

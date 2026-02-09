@@ -62,7 +62,9 @@ export function computeRatePath(opts: {
   const smooth = config.smoothing ?? 0.5;
 
   const ruleRate = neutral + phiPi * (inflation - target) + phiY * outputGap;
-  return prevRate * smooth + ruleRate * (1 - smooth);
+  const blended = prevRate * smooth + ruleRate * (1 - smooth);
+  // Clamp to plausible mortgage rate range (0% to 15%)
+  return Math.max(0, Math.min(0.15, blended));
 }
 
 export function resolveBaseRateFromHistory(opts: {
@@ -90,7 +92,8 @@ export function rateDemandMultiplier(opts: {
 }): number {
   const { baseRate, currentRate, sensitivity = 2.0 } = opts;
   const delta = currentRate - baseRate;
-  return Math.max(0.8, 1 - sensitivity * delta);
+  // Clamp both ways: floor 0.8 (rates up), ceiling 1.25 (rates down)
+  return Math.max(0.8, Math.min(1.25, 1 - sensitivity * delta));
 }
 
 export type RbaResponse = {
