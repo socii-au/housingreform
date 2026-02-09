@@ -211,7 +211,7 @@ function main() {
     csv: sa2IncomeCsv,
     codeCol: "SA2_CODE",
     yearCol: "YEAR",
-    valueCol: "MEDIAN_WEEKLY_HH_INCOME",
+    valueCol: "MEDIAN_ANNUAL_EMPLOYEE_INCOME",
     popCol: "POP",
   });
 
@@ -254,20 +254,11 @@ function main() {
     const idx2016 = years.indexOf(2016 as any);
     const idx2019 = years.indexOf(2019 as any);
 
-    const incomeAnchor = (() => {
-      const cityIncome = incomeByCity[cityId as CityId];
-      const v = cityIncome?.[2021] ?? cityIncome?.[2019] ?? null;
-      return v != null ? toAnnual(v) : null;
-    })();
-    if (incomeAnchor && series.medianAnnualWage && idx2019 >= 0) {
-      const base = series.medianAnnualWage[idx2019] ?? null;
-      if (typeof base === "number" && base > 0) {
-        const ratio = incomeAnchor / base;
-        series.medianAnnualWage = series.medianAnnualWage.map((v) =>
-          typeof v === "number" ? Math.round(v * ratio) : v
-        );
-      }
-    }
+    // NOTE: We intentionally do NOT re-anchor medianAnnualWage from the ABS employee
+    // income field.  The ABS "median employee income" includes part-time workers and is
+    // substantially lower than median full-time wages used in the city baselines.
+    // The synthetic series already back-casts from the correct full-time baseline.
+    // The ABS income data is retained in the raw files for optional future use.
 
     const rentAnchor = (() => {
       const cityRent = rentByCity[cityId as CityId];

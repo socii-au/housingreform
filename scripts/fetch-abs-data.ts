@@ -135,17 +135,19 @@ async function fetchArcgisAllFeatures(opts: {
 }
 
 async function buildSa3Income() {
-  const serviceUrl = `${ARC}/ABS_Income_including_government_allowances_by_2021_SA2/FeatureServer/0`;
+  // Use the SA2 Data-by-Region income layer which has "Median employee income ($)" (income_22020).
+  // This is ANNUAL personal gross income, NOT weekly equivalised household income.
+  const serviceUrl = `${ARC}/SA2_income_DbR_Nov24/FeatureServer/0`;
   const feats = await fetchArcgisAllFeatures({
     serviceUrl,
-    outFields: ["sa2_code_2021", "equiv_22021"],
+    outFields: ["sa2_code_2021", "income_22020"],
   });
-  const out = [["SA2_CODE", "YEAR", "MEDIAN_WEEKLY_HH_INCOME", "POP"]];
+  const out = [["SA2_CODE", "YEAR", "MEDIAN_ANNUAL_EMPLOYEE_INCOME", "POP"]];
   feats.forEach((f) => {
     const code = f.attributes?.sa2_code_2021;
-    const val = f.attributes?.equiv_22021;
-    if (!code || val == null) return;
-    out.push([String(code), "2021", String(val), ""]);
+    const val = f.attributes?.income_22020;
+    if (!code || val == null || val <= 0) return;
+    out.push([String(code), "2020", String(val), ""]);
   });
   writeCsv(path.join(RAW_DIR, "sa2_income.csv"), out);
 }
