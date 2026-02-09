@@ -1,5 +1,8 @@
 
 .env.local
 
+# macOS
+.DS_Store
+
 # Large cache files (can be regenerated)
 data/cache/*.geojson
