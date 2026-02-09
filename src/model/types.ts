@@ -73,14 +73,3 @@ export {
 } from "./presets";
 
 export type { ScenarioPreset } from "./presets";
-
-// Validation
-export {
-  validateCityBaseline,
-  validateAllBaselines,
-  validateCoverage,
-  formatValidationResult,
-  formatCoverageResult,
-} from "./validateBaselines";
-
-export type { ValidationError, ValidationResult, CoverageResult } from "./validateBaselines";

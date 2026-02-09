@@ -22,6 +22,14 @@ function Shell() {
 
   return (
     <div className="appShell">
+      <a
+        href="https://socii.au"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sociiBanner"
+      >
+        A Free Educational Civics Tool by SOCii
+      </a>
       <header className="topBar">
         <div className="container topBarInner">
           <div className="brand" aria-label="AIM-HR — Australian Independent Model for Housing Reform">
@@ -63,6 +71,16 @@ function Shell() {
 
       <main id="main" className="main">
         <div className="container">
+          <p className="buildNotice" aria-live="polite">
+            Last updated on{" "}
+            {typeof __BUILD_TIME__ !== "undefined"
+              ? new Date(__BUILD_TIME__).toLocaleDateString("en-AU", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "—"}
+          </p>
           <Suspense fallback={<div className="card">Loading…</div>}>
             <Routes>
               <Route path="/" element={<GuidedStory />} />

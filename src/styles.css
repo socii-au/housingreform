@@ -129,6 +129,26 @@ textarea:focus-visible,
   flex-direction: column;
 }
 
+.sociiBanner {
+  display: block;
+  text-align: center;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: #c9a227;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: background 0.15s ease;
+}
+.sociiBanner:hover {
+  background: #b08d1f;
+}
+.sociiBanner:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 .topBar {
   position: sticky;
   top: 0;
@@ -215,6 +235,12 @@ textarea:focus-visible,
 .main {
   flex: 1;
   padding: var(--space-24) 0 56px 0;
+}
+
+.buildNotice {
+  margin: 0 0 var(--space-12) 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .card {
@@ -869,6 +895,39 @@ button.primary:hover {
 
 .bg-subtle {
   background: var(--panel);
+}
+
+/* Call-to-action link (e.g. to Explore the Model) */
+.ctaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand2) 70%);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.ctaLink:hover {
+  box-shadow: 0 4px 14px rgba(14, 116, 144, 0.25);
+}
+.ctaLink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.ctaLinkSecondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.ctaLinkSecondary:hover {
+  border-color: var(--brand2);
+  box-shadow: 0 2px 10px rgba(14, 116, 144, 0.1);
 }
 
 /* Screen-reader only — visible to assistive tech, not layout */

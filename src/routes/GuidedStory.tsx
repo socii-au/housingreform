@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { DecileImpact } from "../components/charts/DecileImpact";
 import { DwellingStockArea } from "../components/charts/OwnershipMixArea";
 import { PriceVsBaseline } from "../components/charts/PriceVsBaseline";
@@ -45,7 +46,7 @@ function Section({
   return (
     <section className={`card ${tone}`} style={{ padding: 20, marginBottom: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        {step && (
+        {step != null && step > 0 && (
           <div
             style={{
               width: 32,
@@ -181,10 +182,18 @@ export function GuidedStory() {
   return (
     <div>
       <h1 className="h1">How housing policy affects the market</h1>
-      <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
+      <p className="muted" style={{ marginTop: 0, marginBottom: 12 }}>
         A guided walkthrough of the model, showing cause → effect relationships for{" "}
         <strong>{scopeLabel(scope)}</strong>. Designed to make the model's logic transparent and
         assumptions explicit.
+      </p>
+      <p style={{ marginBottom: 20 }}>
+        <Link to="/explore" className="ctaLink">
+          Explore the model →
+        </Link>
+        <span className="muted" style={{ marginLeft: 12, fontSize: 13 }}>
+          Change scenarios, pick cities or states, and see results in detail.
+        </span>
       </p>
 
       {/* Introduction */}
@@ -229,9 +238,11 @@ export function GuidedStory() {
           <strong>Current scenario:</strong> {policyDescription}
           <br />
           <span className="muted">
-            {simulationYears} year simulation with {params.policy.rampYears} year policy ramp.
-            Use the "Explore the Model" tab to change settings.
+            {simulationYears} year simulation with {params.policy.rampYears} year policy ramp.{" "}
           </span>
+          <Link to="/explore" className="ctaLink ctaLinkSecondary" style={{ marginTop: 8, display: "inline-flex" }}>
+            Change scenario in Explore the Model →
+          </Link>
         </Callout>
       </Section>
 
@@ -283,6 +294,11 @@ export function GuidedStory() {
             "Assumes continuation of underlying demographic trends",
           ]}
         />
+        <p style={{ marginTop: 12, marginBottom: 0 }}>
+          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+            View by city or state in Explore the Model →
+          </Link>
+        </p>
       </Section>
 
       {/* Step 2: Supply and demand */}
@@ -307,6 +323,11 @@ export function GuidedStory() {
           Over {simulationYears} years, population grows by {fmtPct(populationGrowth)} while
           prices grow at {fmtPct(priceGrowthPA)}/year.
         </Callout>
+        <p style={{ marginTop: 12, marginBottom: 0 }}>
+          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+            Adjust supply & demand levers in Explore the Model →
+          </Link>
+        </p>
 
         <HelpExpander summary="The supply-demand mechanism">
           <ol style={{ margin: 0, paddingLeft: 20 }}>
@@ -339,6 +360,11 @@ export function GuidedStory() {
             <li><strong>Color coding:</strong> Green = improving affordability, Red = worsening</li>
           </ul>
         </HelpExpander>
+        <p style={{ marginTop: 12, marginBottom: 0 }}>
+          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+            Try different scenarios in Explore the Model →
+          </Link>
+        </p>
       </Section>
 
       {/* Step 4: Distributional impact */}
@@ -358,6 +384,11 @@ export function GuidedStory() {
           Note: Decile data shown for Sydney as a proxy. Actual distributions vary by city and
           should be interpreted as illustrative, not measured.
         </div>
+        <p style={{ marginTop: 12, marginBottom: 0 }}>
+          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+            Compare stress by city in Explore the Model →
+          </Link>
+        </p>
       </Section>
 
       {/* Step 5: Policy comparison */}
@@ -432,8 +463,11 @@ export function GuidedStory() {
         </div>
 
         <Callout type="success">
-          <strong>Try different scenarios:</strong> Use the "Explore the Model" tab to experiment
-          with combinations. Presets include baseline, individual policies, and combined reforms.
+          <strong>Try different scenarios:</strong> Experiment with combinations in Explore the Model.
+          Presets include baseline, individual policies, and combined reforms.{" "}
+          <Link to="/explore" className="ctaLink" style={{ marginTop: 8, display: "inline-flex" }}>
+            Open Explore the Model →
+          </Link>
         </Callout>
       </Section>
 
@@ -470,7 +504,7 @@ export function GuidedStory() {
           className="callout dark"
           style={{
             marginTop: 20,
-            padding: 16,
+            padding: 20,
             textAlign: "center",
             borderRadius: 12,
           }}
@@ -478,11 +512,13 @@ export function GuidedStory() {
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
             📊 Ready to explore further?
           </div>
-          <p style={{ margin: 0, opacity: 0.8, fontSize: 14 }}>
-            Switch to the "Explore the Model" tab to customize scenarios and see how different
-            policy combinations affect housing outcomes. Check the Assumptions footer for
-            full transparency on methodology.
+          <p style={{ margin: "0 0 16px 0", opacity: 0.8, fontSize: 14 }}>
+            Customise scenarios and see how different policy combinations affect housing outcomes.
+            Check the Assumptions footer for full transparency on methodology.
           </p>
+          <Link to="/explore" className="ctaLink" style={{ fontSize: 14, padding: "10px 18px" }}>
+            Open Explore the Model →
+          </Link>
         </div>
       </Section>
     </div>
