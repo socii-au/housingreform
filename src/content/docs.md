@@ -37,7 +37,7 @@ The glossary uses a single table with clear row separators and high‑contrast c
 | **Median wage** | Typical annual wage | Median annual wage in a region | Benchmark for affordability |
 | **Price‑to‑income ratio** | Price relative to incomes | Median price ÷ median wage | High ratio = low affordability |
 | **Rent‑to‑income ratio** | Rent burden | Median annual rent ÷ median wage | High ratio = rental stress |
-| **Affordability index** | Composite pressure | A function of price‑to‑income and rent burden | Summarizes housing stress |
+| **Affordability (composite)** | Composite pressure | A function of price‑to‑income and rent burden | Summarizes housing stress |
 | **Demand** | Desire/ability to buy | Buyers’ willingness to purchase | Drives price pressure |
 | **Investor demand** | Demand from investors | Share of demand from investors | Sensitive to tax and credit policy |
 | **Owner‑occupier demand** | Demand from residents | Non‑investor purchase demand | Stabilizes prices |
@@ -266,7 +266,7 @@ Each policy is modeled as a **mechanism** that affects either demand, supply, or
 - Ramp‑up years: 5
 
 **Expected outputs (narrative example).**
-You should see lower investor demand, modest price growth reduction, and gradual supply uplift. The affordability index should improve relative to baseline but remain sensitive to population growth.
+You should see lower investor demand, modest price growth reduction, and gradual supply uplift. Affordability (the composite measure of price and rent vs wages) should improve relative to baseline but remain sensitive to population growth.
 
 ---
 

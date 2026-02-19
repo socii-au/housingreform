@@ -2,7 +2,7 @@
  * WageVsHousingChart
  *
  * Compares wage growth against housing price and rent growth over time.
- * All values are indexed to year 0 = 100 for direct comparison.
+ * Chart uses a common scale (100 = baseline year) so growth rates are comparable; tooltips show monetary amounts.
  */
 
 import {
@@ -80,7 +80,7 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
     <div className="card">
       <h3 style={{ marginBottom: "4px" }}>Wage vs Housing Growth — {scopeLabel}</h3>
       <p className="chart-description">
-        Compares wage growth against housing prices and rents. All indexed to Year 0 = 100.
+        Compares wage growth against housing prices and rents. Lines are on a common scale (100 = start); hover for dollar values.
       </p>
 
       {/* Summary metrics */}
@@ -161,15 +161,23 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
             tick={{ fill: "#6b7280" }}
             domain={['auto', 'auto']}
             tickFormatter={(v) => fmt(v)}
+            label={{ value: "Relative to start (100 = baseline)", angle: -90, position: "insideLeft", style: { fontSize: 10, fill: "#6b7280" } }}
           />
           <Tooltip
-            formatter={(value: number, name: string) => {
+            formatter={(value: number, name: string, item: any) => {
+              const p = item?.payload;
               const labels: Record<string, string> = {
                 wageIndex: "Wages",
-                priceIndex: "Prices",
-                rentIndex: "Rents"
+                priceIndex: "Housing price",
+                rentIndex: "Rent (annual)"
               };
-              return [fmt(value), labels[name] || name];
+              const wageAmt = p?.medianAnnualWage ?? (first && p?.wageIndex != null && first.medianAnnualWage != null ? (p.wageIndex / 100) * first.medianAnnualWage : null);
+              const monetary =
+                name === "wageIndex" ? (wageAmt != null ? fmtCurrency(wageAmt) : fmt(value))
+                : name === "priceIndex" ? (p?.medianPrice != null ? fmtCurrency(p.medianPrice) : fmt(value))
+                : name === "rentIndex" ? (p?.medianAnnualRent != null ? fmtCurrency(p.medianAnnualRent) + "/yr" : fmt(value))
+                : fmt(value);
+              return [monetary, labels[name] || name];
             }}
             labelFormatter={(label) => `Year ${label}`}
             contentStyle={{ 
@@ -183,9 +191,9 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
             height={36}
             formatter={(value) => {
               const labels: Record<string, string> = {
-                wageIndex: "Wages (indexed)",
+                wageIndex: "Wages",
                 priceIndex: "Housing prices",
-                rentIndex: "Rents (annual)"
+                rentIndex: "Rents"
               };
               return labels[value] || value;
             }}
@@ -194,7 +202,7 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
             y={100} 
             stroke="#9ca3af" 
             strokeDasharray="3 3"
-            label={{ value: "Baseline", position: "right", fontSize: 10, fill: "#9ca3af" }}
+            label={{ value: "Start", position: "right", fontSize: 10, fill: "#9ca3af" }}
           />
           {cutoverYear != null && (
             <ReferenceLine
@@ -272,11 +280,11 @@ export default function WageVsHousingChart({ years, scopeLabel, cutoverYear, onH
 
       <HelpExpander summary="How to interpret this chart">
         <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", lineHeight: 1.6 }}>
-          <li><strong>Wage line (gold):</strong> Shows how median full-time wages grow over time</li>
-          <li><strong>Price line (red):</strong> Shows housing price growth — if above wage line, affordability is worsening</li>
-          <li><strong>Rent line (blue dashed):</strong> Shows rental cost growth — affects current housing stress</li>
-          <li><strong>Baseline (100):</strong> Starting point for all metrics in year 0</li>
-          <li><strong>Gap:</strong> The difference between housing growth and wage growth represents the affordability squeeze</li>
+          <li><strong>Wage line (gold):</strong> Median full-time wage growth; hover to see dollar values</li>
+          <li><strong>Price line (red):</strong> Housing price growth — if above wage line, affordability is worsening</li>
+          <li><strong>Rent line (blue dashed):</strong> Rental cost growth — affects current housing stress</li>
+          <li><strong>Start (100):</strong> All three series start at the same baseline so growth rates are comparable</li>
+          <li><strong>Gap:</strong> The difference between housing growth and wage growth is the affordability squeeze</li>
         </ul>
       </HelpExpander>
 

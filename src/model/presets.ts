@@ -1711,42 +1711,12 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
     years: 15,
   },
   {
-    id: "ng-remove-plus-cap",
-    name: "Remove NG + Ownership Cap",
-    description:
-      "Combined reform: phase out negative gearing AND enforce ownership cap.",
-    policy: {
-      ...DEFAULT_POLICY_LEVERS,
-      negativeGearingMode: "remove",
-      negativeGearingIntensity: 1,
-      ownershipCapEnabled: true,
-      ownershipCapEnforcement: 1,
-      excessInvestorStockShare: 0.20,
-      divestmentPhased: true,
-      rampYears: 5,
-    },
-    years: 20,
-  },
-  {
     id: "supply-boost",
     name: "Supply Boost (+20%)",
     description: "Increase housing completions by 20% through planning reforms.",
     policy: {
       ...DEFAULT_POLICY_LEVERS,
       supplyBoost: 0.20,
-    },
-    years: 20,
-  },
-  {
-    id: "supply-boost-plus-ng",
-    name: "Supply Boost + Remove NG",
-    description: "Combined supply and demand-side reform.",
-    policy: {
-      ...DEFAULT_POLICY_LEVERS,
-      supplyBoost: 0.15,
-      negativeGearingMode: "remove",
-      negativeGearingIntensity: 1,
-      rampYears: 5,
     },
     years: 20,
   },
@@ -1832,6 +1802,30 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
       rampYears: 0,
     },
     years: 12,
+  },
+  {
+    id: "immigration-cap",
+    name: "Immigration Cap (200k/yr)",
+    description:
+      "Cap net overseas migration at ~200,000 per year, roughly halving current intake. Reduces demand pressure across all cities proportionally.",
+    policy: {
+      ...DEFAULT_POLICY_LEVERS,
+      migration: { ...DEFAULT_POLICY_LEVERS.migration, netOverseasMigrationShock: -0.55 },
+      rampYears: 2,
+    },
+    years: 20,
+  },
+  {
+    id: "cgt-repeal",
+    name: "CGT Discount Repeal",
+    description:
+      "Repeal the 50% capital gains tax discount on investment property. Models full removal of the discount (50pp reduction), lowering after-tax returns for investors and reducing investor demand for housing.",
+    policy: {
+      ...DEFAULT_POLICY_LEVERS,
+      taxInvestor: { ...DEFAULT_POLICY_LEVERS.taxInvestor, cgtDiscountDelta: -0.50 },
+      rampYears: 5,
+    },
+    years: 20,
   },
   {
     id: "all-levers",

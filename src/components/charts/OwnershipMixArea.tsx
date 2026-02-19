@@ -52,9 +52,9 @@ export function DwellingStockArea({
 
   return (
     <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>
+      <h2 className="h2" style={{ marginBottom: 4 }}>
         Housing stock vs demand
-      </div>
+      </h2>
       <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
         {chartHelp.description}
       </div>

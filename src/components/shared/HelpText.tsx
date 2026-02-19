@@ -16,15 +16,15 @@ export const HELP = {
       "ng-restore": "Model the effect of restoring negative gearing if it were previously removed.",
       "ownership-cap": "Limit individuals to 1 principal residence + 1 investment property. Forces divestment of excess.",
       "ownership-cap-aggressive": "Same ownership cap with faster enforcement and shorter transition period.",
-      "ng-remove-plus-cap": "Combined reform: phase out negative gearing AND enforce ownership cap simultaneously.",
       "supply-boost": "Increase housing completions by 20% through planning reforms, faster approvals, and infrastructure.",
-      "supply-boost-plus-ng": "Combined supply-side and demand-side reform: more construction + reduced investor demand.",
       comprehensive: "Full reform package: supply boost, negative gearing removal, ownership cap, and stamp duty reduction.",
       "land-tax-transition": "Shift from stamp duty toward land tax (proxy): increases turnover and reduces transaction friction in the model.",
       "macroprudential-tightening": "Tighten credit conditions: serviceability buffer + DTI caps + investor lending limits (proxy).",
       "short-stay-clampdown": "Regulate short-stay and underutilised dwellings to shift a bounded share into long-term rentals (proxy).",
       "public-housing-build": "Public/community build program: adds completions (bounded) and reduces rental pressure (proxy).",
       "migration-shock-down": "Lower net overseas migration (proxy shock) to reduce demand pressure.",
+      "immigration-cap": "Cap net overseas migration at ~200,000/yr (~55% cut). Reduces demand pressure across all cities.",
+      "cgt-repeal": "Repeal the 50% CGT discount on investment property. Lowers after-tax investor returns and investor demand.",
       "all-levers": "Stress test: combine core reforms with calibration-first levers (bounded, directional).",
       custom: "Manually configured — adjust individual levers below to create your own scenario.",
     },
@@ -218,13 +218,13 @@ export const HELP = {
   charts: {
     priceIndex: {
       title: "Price trajectory",
-      description: "Indexed to year 0 = 100. A value of 200 means prices doubled from starting point.",
+      description: "Median dwelling price in Australian dollars over time. Charts show nominal (unadjusted) values.",
       interpretation: "Steeper curves = faster price growth. Compare scenarios to see policy impact on trajectory.",
       limitations: "Nominal prices — not inflation-adjusted. Real growth is lower. Does not capture within-city variation.",
     },
     rentIndex: {
       title: "Rent trajectory",
-      description: "Indexed to year 0 = 100. Shows evolution of annual rent relative to starting point.",
+      description: "Median annual rent in Australian dollars over time. Charts show nominal (unadjusted) values.",
       interpretation: "Rent often lags price changes. Policy that reduces investor supply may increase rents short-term.",
       limitations: "Median rent hides distribution. Outer suburbs, different dwelling types vary significantly.",
     },
@@ -255,9 +255,9 @@ export const HELP = {
       interpretation: "More dwellings = more housing supply. Compare to population growth to assess adequacy.",
     },
     housingCostIndex: {
-      title: "Housing cost index",
-      description: "Composite measure: weighted combination of price and rent changes relative to wage growth.",
-      interpretation: "Higher = worse affordability. Combines owner and renter perspectives into single metric.",
+      title: "Affordability (composite)",
+      description: "Composite measure of price and rent changes relative to wage growth.",
+      interpretation: "Higher = worse affordability. Combines owner and renter perspectives into a single metric.",
     },
   },
 
@@ -375,20 +375,12 @@ export function HelpExpander({
   defaultOpen?: boolean;
 }) {
   return (
-    <details style={{ marginTop: 10 }} open={defaultOpen}>
-      <summary
-        style={{
-          cursor: "pointer",
-          fontWeight: 650,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <span style={{ fontSize: 12 }}>▸</span>
+    <details className="helpExpander" style={{ marginTop: 10 }} open={defaultOpen}>
+      <summary className="helpExpanderTrigger">
+        <span className="helpExpanderChevron" aria-hidden="true">▸</span>
         {summary}
       </summary>
-      <div className="muted" style={{ marginTop: 6, paddingLeft: 18 }}>
+      <div className="helpExpanderBody muted">
         {children}
       </div>
     </details>

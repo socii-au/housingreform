@@ -47,6 +47,8 @@ export const PRESET_PARTIES: Record<string, PartyKey[]> = {
   "short-stay-clampdown": ["greens"],
   "public-housing-build": ["labor"],
   "migration-shock-down": ["coalition"],
+  "immigration-cap": ["coalition"],
+  "cgt-repeal": ["labor", "greens"],
   "all-levers": ["independent"],
 };
 

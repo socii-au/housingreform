@@ -68,9 +68,9 @@ export function DecileImpact({ rows }: { rows: DecileRow[] }) {
 
   return (
     <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>
+      <h2 className="h2" style={{ marginBottom: 4 }}>
         {decileHelp.title}
-      </div>
+      </h2>
       <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
         {decileHelp.description}
       </div>
@@ -128,7 +128,7 @@ export function DecileImpact({ rows }: { rows: DecileRow[] }) {
         </div>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div className="tableScroll">
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
           <thead>
             <tr style={{ textAlign: "left" }}>

@@ -107,12 +107,9 @@ Historical series are provided per city (preferred “truth”), with state/nati
 - impute missing values conservatively and **flag** that imputation
 - emit `meta.warnings` when coverage is weak or units look wrong
 
-### Index base options
+### Chart baseline
 
-Charts can index the full timeline to either:
-
-- earliest historical year (e.g., 2000 = 100), or
-- baseline year (year0 = 100)
+When historical data is shown, the model uses a baseline year (either the earliest historical year or the simulation start) for internal comparison. Charts display results in monetary terms (median price, annual rent) so users see dollar values directly.
 
 ### Transparency and warnings
 

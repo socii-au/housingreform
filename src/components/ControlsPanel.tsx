@@ -160,7 +160,7 @@ export function ControlsPanel() {
   return (
     <div className="controls-panel" role="region" aria-labelledby="scenario-controls-heading">
       <div className="controls-header">
-        <h2 className="h3" style={{ margin: 0 }} id="scenario-controls-heading">Scenario Controls</h2>
+        <h2 className="h3" style={{ margin: 0 }} id="scenario-controls-heading">Scenario controls</h2>
         <button
           type="button"
           className="btn-reset"
@@ -298,6 +298,18 @@ export function ControlsPanel() {
                   <PartyChip key={`comprehensive-${p}`} party={p} />
                 ))}
               </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("cgt-repeal")}
+                  onChange={() => togglePreset("cgt-repeal")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>📉 CGT Discount Repeal</span>
+                {PRESET_PARTIES["cgt-repeal"]?.map((p) => (
+                  <PartyChip key={`cgt-repeal-${p}`} party={p} />
+                ))}
+              </label>
             </div>
 
             {/* Expert presets */}
@@ -363,6 +375,18 @@ export function ControlsPanel() {
                 <span>🧳 Migration Shock (Lower)</span>
                 {PRESET_PARTIES["migration-shock-down"]?.map((p) => (
                   <PartyChip key={`migration-shock-down-${p}`} party={p} />
+                ))}
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPresets.includes("immigration-cap")}
+                  onChange={() => togglePreset("immigration-cap")}
+                  style={{ cursor: "pointer" }}
+                />
+                <span>🛂 Immigration Cap (200k/yr)</span>
+                {PRESET_PARTIES["immigration-cap"]?.map((p) => (
+                  <PartyChip key={`immigration-cap-${p}`} party={p} />
                 ))}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -464,14 +488,14 @@ export function ControlsPanel() {
             Historical lines appear muted. Projections begin at the city baseline year.
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
-            <label htmlFor="control-history-index-base" className="muted" style={{ fontSize: 12 }}>Index base:</label>
+            <label htmlFor="control-history-index-base" className="muted" style={{ fontSize: 12 }}>Chart baseline:</label>
             <select
               id="control-history-index-base"
               value={historyIndexBase}
               onChange={(e) => setHistoryIndexBase(e.target.value as any)}
               className="select-field"
               style={{ maxWidth: 220 }}
-              aria-label="Index base year for historical overlay"
+              aria-label="Baseline year for chart comparison when showing historical overlay"
             >
               <option value="history">Year 2000 (or earliest available)</option>
               <option value="year0">Baseline year (model start)</option>
@@ -680,9 +704,9 @@ export function ControlsPanel() {
               ))}
             </div>
             <SliderField
-              label="CGT discount change (−25pp to +25pp)"
+              label="CGT discount change (−50pp to +25pp)"
               value={policy.taxInvestor.cgtDiscountDelta * 100}
-              min={-25}
+              min={-50}
               max={25}
               step={5}
               onChange={(pp) =>

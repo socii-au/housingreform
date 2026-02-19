@@ -1,3 +1,4 @@
+import { useRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DecileImpact } from "../components/charts/DecileImpact";
 import { DwellingStockArea } from "../components/charts/OwnershipMixArea";
@@ -7,6 +8,35 @@ import { SummaryCounter } from "../components/PublicHousingCounter";
 import { useModel, scopeLabel } from "../model/ModelContext";
 import { HelpExpander, LimitationsBox } from "../components/shared/HelpText";
 import type { TimelinePoint } from "../model/history/types";
+
+function useScrollReveal(): [(el: HTMLElement | null) => void, boolean] {
+  const elRef = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const cbRef = useRef((el: HTMLElement | null) => {
+    elRef.current = el;
+  });
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [cbRef.current, visible];
+}
 
 function fmtAUD(n: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -34,6 +64,7 @@ function Section({
   children: React.ReactNode;
   highlight?: "green" | "yellow" | "blue";
 }) {
+  const [ref, visible] = useScrollReveal();
   const tone =
     highlight === "green"
       ? "tone-success"
@@ -44,28 +75,19 @@ function Section({
           : "tone-neutral";
 
   return (
-    <section className={`card ${tone}`} style={{ padding: 20, marginBottom: 20 }}>
+    <section
+      ref={ref}
+      className={`card ${tone} scrollReveal ${visible ? "visible" : ""}`}
+      style={{ padding: "16px", marginBottom: 16 }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         {step != null && step > 0 && (
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              background: "var(--brand)",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: 14,
-            }}
-          >
+          <div className="stepBadge">
             {step}
           </div>
         )}
         <div>
-          <div className="h2" style={{ margin: 0 }}>{title}</div>
+          <h2 className="h2" style={{ margin: 0 }}>{title}</h2>
           {kicker && <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>{kicker}</div>}
         </div>
       </div>
@@ -102,7 +124,7 @@ function PolicyCard({
 }) {
   return (
     <div className="panel" style={{ padding: 16 }}>
-      <div className="h3" style={{ marginBottom: 8 }}>{title}</div>
+      <h3 className="h3" style={{ marginBottom: 8 }}>{title}</h3>
       <p className="muted" style={{ margin: "0 0 12px 0", fontSize: 13 }}>{description}</p>
 
       <div style={{ marginBottom: 12 }}>
@@ -150,7 +172,7 @@ export function GuidedStory() {
     return (
       <div style={{ padding: 40, textAlign: "center" }}>
         <div style={{ fontSize: 24, marginBottom: 16 }}>⏳</div>
-        <div className="h2">Loading simulation...</div>
+        <h2 className="h2">Loading simulation...</h2>
         <div className="muted">Preparing guided analysis</div>
       </div>
     );
@@ -188,7 +210,7 @@ export function GuidedStory() {
         assumptions explicit.
       </p>
       <p style={{ marginBottom: 20 }}>
-        <Link to="/explore" className="ctaLink">
+        <Link to="/" className="ctaLink">
           Explore the model →
         </Link>
         <span className="muted" style={{ marginLeft: 12, fontSize: 13 }}>
@@ -240,7 +262,7 @@ export function GuidedStory() {
           <span className="muted">
             {simulationYears} year simulation with {params.policy.rampYears} year policy ramp.{" "}
           </span>
-          <Link to="/explore" className="ctaLink ctaLinkSecondary" style={{ marginTop: 8, display: "inline-flex" }}>
+          <Link to="/" className="ctaLink ctaLinkSecondary" style={{ marginTop: 8, display: "inline-flex" }}>
             Change scenario in Explore the Model →
           </Link>
         </Callout>
@@ -254,7 +276,7 @@ export function GuidedStory() {
       >
         <div className="grid2">
           <div className="panel" style={{ padding: 16 }}>
-            <div className="h3" style={{ marginBottom: 10 }}>Key metrics at year 0</div>
+            <h3 className="h3" style={{ marginBottom: 10 }}>Key metrics at year 0</h3>
             <div style={{ display: "grid", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                 <span className="muted">Population</span>
@@ -295,7 +317,7 @@ export function GuidedStory() {
           ]}
         />
         <p style={{ marginTop: 12, marginBottom: 0 }}>
-          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+          <Link to="/" className="ctaLinkSecondary ctaLink">
             View by city or state in Explore the Model →
           </Link>
         </p>
@@ -324,7 +346,7 @@ export function GuidedStory() {
           prices grow at {fmtPct(priceGrowthPA)}/year.
         </Callout>
         <p style={{ marginTop: 12, marginBottom: 0 }}>
-          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+          <Link to="/" className="ctaLinkSecondary ctaLink">
             Adjust supply & demand levers in Explore the Model →
           </Link>
         </p>
@@ -356,12 +378,12 @@ export function GuidedStory() {
           <ul style={{ margin: 0, paddingLeft: 16 }}>
             <li><strong>Price/rent change:</strong> Total growth over the simulation period (nominal)</li>
             <li><strong>Net dwellings:</strong> How much housing stock increased</li>
-            <li><strong>Housing cost index:</strong> Composite measure vs wage growth</li>
+            <li><strong>Affordability (composite):</strong> Price and rent vs wage growth</li>
             <li><strong>Color coding:</strong> Green = improving affordability, Red = worsening</li>
           </ul>
         </HelpExpander>
         <p style={{ marginTop: 12, marginBottom: 0 }}>
-          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+          <Link to="/" className="ctaLinkSecondary ctaLink">
             Try different scenarios in Explore the Model →
           </Link>
         </p>
@@ -385,7 +407,7 @@ export function GuidedStory() {
           should be interpreted as illustrative, not measured.
         </div>
         <p style={{ marginTop: 12, marginBottom: 0 }}>
-          <Link to="/explore" className="ctaLinkSecondary ctaLink">
+          <Link to="/" className="ctaLinkSecondary ctaLink">
             Compare stress by city in Explore the Model →
           </Link>
         </p>
@@ -465,7 +487,7 @@ export function GuidedStory() {
         <Callout type="success">
           <strong>Try different scenarios:</strong> Experiment with combinations in Explore the Model.
           Presets include baseline, individual policies, and combined reforms.{" "}
-          <Link to="/explore" className="ctaLink" style={{ marginTop: 8, display: "inline-flex" }}>
+          <Link to="/" className="ctaLink" style={{ marginTop: 8, display: "inline-flex" }}>
             Open Explore the Model →
           </Link>
         </Callout>
@@ -516,7 +538,7 @@ export function GuidedStory() {
             Customise scenarios and see how different policy combinations affect housing outcomes.
             Check the Assumptions footer for full transparency on methodology.
           </p>
-          <Link to="/explore" className="ctaLink" style={{ fontSize: 14, padding: "10px 18px" }}>
+          <Link to="/" className="ctaLink" style={{ fontSize: 14, padding: "10px 18px" }}>
             Open Explore the Model →
           </Link>
         </div>

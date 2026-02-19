@@ -79,7 +79,7 @@ export const POLICY_PARAMS: PolicyParamMeta[] = [
   {
     key: "taxInvestor.cgtDiscountDelta",
     label: "CGT discount change",
-    bounds: { min: -0.25, max: 0.25 },
+    bounds: { min: -0.50, max: 0.25 },
     unit: "share",
     calibrationFirst: true,
   },
@@ -247,8 +247,12 @@ export function listAtBounds(policy: PolicyLeversV2): string[] {
   POLICY_PARAMS.forEach((m) => {
     const v = getPolicyValue(p as any, m.key);
     if (typeof v !== "number") return;
+    const dv = getPolicyValue(DEFAULT_POLICY_LEVERS_V2 as any, m.key);
+    const defaultNum = typeof dv === "number" ? dv : 0;
     const { min, max } = m.bounds;
-    if (Math.abs(v - min) < 1e-12 || Math.abs(v - max) < 1e-12) out.push(m.label);
+    const atMin = Math.abs(v - min) < 1e-12;
+    const atMax = Math.abs(v - max) < 1e-12;
+    if ((atMin || atMax) && Math.abs(v - defaultNum) > 1e-12) out.push(m.label);
   });
   return out;
 }
@@ -289,7 +293,7 @@ export function clampPolicyV2(policy: PolicyLevers | PolicyLeversV2): PolicyLeve
     rampYears,
     taxInvestor: {
       ...p.taxInvestor,
-      cgtDiscountDelta: clamp(p.taxInvestor.cgtDiscountDelta, -0.25, 0.25),
+      cgtDiscountDelta: clamp(p.taxInvestor.cgtDiscountDelta, -0.50, 0.25),
       landTaxShift: clamp(p.taxInvestor.landTaxShift, 0, 1),
       vacancyTaxIntensity: clamp(p.taxInvestor.vacancyTaxIntensity, 0, 1),
       shortStayRegulationIntensity: clamp(p.taxInvestor.shortStayRegulationIntensity, 0, 1),

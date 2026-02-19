@@ -17,12 +17,13 @@ export function taxInvestorChannels(ctx: PolicyContext): PolicyChannelDelta {
   const t = policy.taxInvestor;
   const ramp = policyRamp(ctx);
 
-  // CGT discount change: affects investor after-tax return.
+  // CGT discount change: affects investor after-tax return (percentage points).
+  // Australia: 50% CGT discount for assets held >12 months. Repeal = -50pp (-0.50).
   // cgtDiscountDelta positive => more investor demand, negative => less.
-  // Conservative: +/-25pp maps to roughly +/-6% investor demand.
-  const cgt = clamp(t.cgtDiscountDelta, -0.25, 0.25) * ramp;
+  // Elasticity: -50pp (full repeal) => ~12.5% lower investor demand; -25pp => ~6.25%.
+  const cgt = clamp(t.cgtDiscountDelta, -0.50, 0.25) * ramp;
   if (cgt !== 0) d.notes.push(`CGT discount delta applied: ${Math.round(cgt * 100)}pp`);
-  d.investorDemandMultiplier *= 1 + 0.25 * cgt; // -0.25 => 0.9375, +0.25 => 1.0625
+  d.investorDemandMultiplier *= 1 + 0.25 * cgt; // -0.50 => 0.875, -0.25 => 0.9375, +0.25 => 1.0625
 
   // Vacancy tax: nudges empty/underutilized stock back into rental supply.
   const vac = clamp(t.vacancyTaxIntensity, 0, 1) * ramp;

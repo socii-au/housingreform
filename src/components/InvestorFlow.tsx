@@ -132,9 +132,9 @@ export function PolicyChannelsFlow({ series }: { series: YearState[] }) {
 
   return (
     <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>
+      <h2 className="h2" style={{ marginBottom: 4 }}>
         Scenario outcomes: year {first.year} → {last.year}
-      </div>
+      </h2>
       <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
         {policyHelp.description}
       </div>
@@ -182,9 +182,9 @@ export function PolicyChannelsFlow({ series }: { series: YearState[] }) {
       {/* Policy channels section */}
       {hasPolicyEffects && (
         <div style={{ marginBottom: 16 }}>
-          <div className="h3" style={{ marginBottom: 8 }}>
+          <h3 className="h3" style={{ marginBottom: 8 }}>
             Policy channel effects (at year {last.year})
-          </div>
+          </h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             <PolicyChannelCard
               title={policyHelp.investorDemand.title}

@@ -44,31 +44,30 @@ export function PriceVsBaseline({
   const helpKey = isPrice ? "priceIndex" : "rentIndex";
   const chartHelp = HELP.charts[helpKey];
 
-  const indexed = series
+  // Build chart data: use monetary values for display; indexing is only used internally for growth logic.
+  const chartData = series
     .map((s) => {
       const v = (s as any)[dataKey] as number | undefined;
-      const idx = typeof v === "number" && baseValue > 0 ? (v / baseValue) * 100 : null;
-      // Back-compat: when we pass projected series without a `kind` field, treat it as projected.
       const kind = (s as any).kind ?? "projected";
       return {
         year: (s as any).year,
         kind,
         value: v ?? null,
-        index: idx,
-        histIndex: kind === "historical" ? idx : null,
-        projIndex: kind === "projected" ? idx : null,
+        histValue: kind === "historical" ? (v ?? null) : null,
+        projValue: kind === "projected" ? (v ?? null) : null,
       };
     })
     .filter((x) => x.year != null);
 
-  const first = indexed[0];
-  const last = indexed[indexed.length - 1];
+  const first = chartData[0];
+  const last = chartData[chartData.length - 1];
   const totalChange = last && first && first.value != null && last.value != null
     ? (last.value - first.value) / first.value
     : 0;
   const avgAnnualChange = last && first && last.year > first.year && first.value != null && last.value != null
     ? Math.pow(1 + totalChange, 1 / (last.year - first.year)) - 1
     : 0;
+  const yAxisLabel = isPrice ? "Median price (AUD)" : "Annual rent (AUD)";
 
   // Color coding based on growth rate
   const lineColor =
@@ -79,9 +78,9 @@ export function PriceVsBaseline({
 
   return (
     <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>
+      <h2 className="h2" style={{ marginBottom: 4 }}>
         {title}
-      </div>
+      </h2>
       <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
         {chartHelp.description}
       </div>
@@ -119,7 +118,7 @@ export function PriceVsBaseline({
       <div style={{ width: "100%", height: 260 }}>
         <ResponsiveContainer>
           <LineChart
-            data={indexed}
+            data={chartData}
             margin={{ top: 10, right: 10, bottom: 10, left: 0 }}
             onMouseMove={(e: any) => {
               const y = e?.activeLabel;
@@ -136,9 +135,9 @@ export function PriceVsBaseline({
             />
             <YAxis
               domain={["auto", "auto"]}
-              tickFormatter={(v) => `${v}`}
+              tickFormatter={(v) => fmtAUD(v)}
               label={{
-                value: "Index (start=100)",
+                value: yAxisLabel,
                 angle: -90,
                 position: "insideLeft",
                 style: { fontSize: 11, fill: "#6b7280" },
@@ -148,10 +147,9 @@ export function PriceVsBaseline({
               axisLine={{ stroke: "#e5e7eb" }}
             />
             <Tooltip
-              formatter={(value, name) => {
-                if (typeof value !== "number") return [value, name];
-                if (name === "Nominal value") return [fmtAUD(value), name];
-                return [value.toFixed(1), name];
+              formatter={(value) => {
+                if (typeof value === "number") return [fmtAUD(value), ""];
+                return [value, ""];
               }}
               labelFormatter={(l) => `Year ${l}`}
               contentStyle={{
@@ -163,8 +161,8 @@ export function PriceVsBaseline({
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
-              dataKey="histIndex"
-              name={isPrice ? "Historical" : "Historical"}
+              dataKey="histValue"
+              name="Historical"
               stroke="#94a3b8"
               strokeWidth={2}
               dot={false}
@@ -172,15 +170,14 @@ export function PriceVsBaseline({
             />
             <Line
               type="monotone"
-              dataKey="projIndex"
-              name={isPrice ? "Projected" : "Projected"}
+              dataKey="projValue"
+              name="Projected"
               stroke={lineColor}
               strokeWidth={3}
               dot={false}
               activeDot={{ r: 5, fill: lineColor }}
             />
-            {/* Reference line at 100 */}
-            <ReferenceLine y={100} stroke="#9ca3af" strokeDasharray="4 4" />
+            <ReferenceLine y={baseValue} stroke="#9ca3af" strokeDasharray="4 4" label={{ value: "Start", position: "right", fontSize: 10, fill: "#6b7280" }} />
             {cutoverYear != null && (
               <ReferenceLine
                 x={cutoverYear}
@@ -196,10 +193,9 @@ export function PriceVsBaseline({
       <HelpExpander summary="How to interpret this chart">
         <p style={{ margin: "0 0 8px 0" }}>{chartHelp.interpretation}</p>
         <ul style={{ margin: 0, paddingLeft: 16 }}>
-          <li>Index starts at 100 in year 0</li>
-          <li>Index of 150 = 50% higher than starting value</li>
-          <li>Index of 200 = doubled from starting value</li>
-          <li>Dashed line shows the starting baseline for reference</li>
+          <li>Values are median {isPrice ? "dwelling price" : "annual rent"} in Australian dollars</li>
+          <li>The dashed line marks the starting (baseline) value</li>
+          <li>Steeper growth = faster increase in {isPrice ? "prices" : "rents"}</li>
         </ul>
       </HelpExpander>
 

@@ -43,19 +43,21 @@ function SummaryCard({
   };
 
   return (
-    <div className="panel" style={{ padding: 14 }}>
+    <div className="panel" style={{ padding: 14, minWidth: 0, overflowWrap: "break-word" }}>
       <div className="muted" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
         {label}
         {tooltip && <InfoTooltip text={tooltip} />}
       </div>
       <div
         style={{
+          fontFamily: "var(--font-display)",
           fontSize: 26,
           fontWeight: 800,
           letterSpacing: "-0.02em",
           display: "flex",
           alignItems: "center",
           gap: 8,
+          flexWrap: "wrap",
         }}
       >
         {value}
@@ -66,7 +68,7 @@ function SummaryCard({
         )}
       </div>
       {detail && (
-        <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+        <div className="muted" style={{ fontSize: 12, marginTop: 4, overflowWrap: "break-word" }}>
           {detail}
         </div>
       )}
@@ -122,10 +124,10 @@ export function SummaryCounter() {
   const dwellingsPerCapita = newDwellings / populationChange;
 
   return (
-    <div className="card" style={{ padding: 14 }}>
-      <div className="h2" style={{ marginBottom: 4 }}>
+    <div className="card" style={{ padding: 14, minWidth: 0, maxWidth: "100%" }}>
+      <h2 className="h2" style={{ marginBottom: 4 }}>
         Scenario summary — {scopeLabel(scope)}
-      </div>
+      </h2>
       <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
         Key outcomes over the {simulationYears} year simulation period.
       </div>
@@ -164,7 +166,7 @@ export function SummaryCounter() {
       </div>
 
       {/* Additional context */}
-      <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+      <div className="metricExplainerGrid">
         <MetricExplainer
           title="Population growth"
           description={`+${fmtInt(populationChange)} (${fmtPct(populationChange / first.population)})`}
@@ -183,7 +185,7 @@ export function SummaryCounter() {
         <ul style={{ margin: 0, paddingLeft: 16 }}>
           <li><strong>Price/rent change:</strong> {summaryHelp.priceChange.interpretation}</li>
           <li><strong>Net dwellings:</strong> {summaryHelp.newDwellings.interpretation}</li>
-          <li><strong>Housing cost index:</strong> {summaryHelp.housingCostIndex.interpretation}</li>
+          <li><strong>Affordability (composite):</strong> {summaryHelp.housingCostIndex.interpretation}</li>
         </ul>
       </HelpExpander>
 

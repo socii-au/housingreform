@@ -19,10 +19,10 @@ function Section({
 }) {
   return (
     <div className="footerBox">
-      <div className="h3" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <h3 className="h3" style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span>{icon}</span>
         {title}
-      </div>
+      </h3>
       <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
         {items.map((item, i) => (
           <li key={i} style={{ marginBottom: 4, lineHeight: 1.5 }}>
@@ -100,38 +100,34 @@ export function AssumptionsFooter() {
     >
       <div className="container footerPanelInner">
         <div className="footerPanelHeader">
-          <div>
-            <div className="h3" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🔍</span>
-              Trust & transparency
-            </div>
-            <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-              What this model assumes, what it can't predict, and what could change outcomes.
-            </div>
-          </div>
+          <h3 className="h3" style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+            <span>🔍</span>
+            Trust & transparency
+          </h3>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="assumptions-footer-details"
             aria-label={open ? "Hide assumptions and transparency details" : "Show assumptions and transparency details"}
+            title="What this model assumes, what it can't predict, and what could change outcomes."
             style={{
-              padding: "10px 14px",
-              minHeight: 44,
               borderRadius: 8,
               border: "1px solid var(--border)",
               background: "var(--surface)",
               cursor: "pointer",
               fontWeight: 600,
-              fontSize: 13,
             }}
           >
-            {open ? "▲ Hide details" : "▼ Show details"}
+            {open ? "Hide details" : "Show details"}
           </button>
         </div>
 
         {open ? (
           <div id="assumptions-footer-details" className="footerPanelDetails">
+            <p className="muted" style={{ fontSize: 13, margin: "0 0 12px 0" }}>
+              What this model assumes, what it can't predict, and what could change outcomes.
+            </p>
             {/* Quick summary bar */}
             <div
               style={{
@@ -163,10 +159,10 @@ export function AssumptionsFooter() {
             <div className="footerPanelBody">
               {/* Current configuration */}
               <div className="footerBox" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
-                <div className="h3" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 className="h3" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span>📊</span>
                   Current configuration
-                </div>
+                </h3>
                 <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
                   <li style={{ marginBottom: 4 }}>
                     <strong>Coverage:</strong> {cityCount} cities ({capitalCount} capitals

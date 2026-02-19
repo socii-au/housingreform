@@ -295,7 +295,7 @@ export interface PolicyLevers {
 }
 
 export interface TaxInvestorLevers {
-  /** Change in CGT discount (e.g., -0.25 = reduce discount by 25 percentage points). */
+  /** Change in CGT discount in percentage points (e.g., -0.50 = full repeal of 50% discount, -0.25 = 25pp reduction). */
   cgtDiscountDelta: number;
   /** Transition share from stamp duty to land tax (0..1). */
   landTaxShift: number;

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { ControlsPanel } from "../components/ControlsPanel";
 import { useModel, scopeLabel } from "../model/ModelContext";
 import { HelpExpander } from "../components/shared/HelpText";
@@ -6,6 +6,7 @@ import { DEFAULT_POLICY_LEVERS_V2, POLICY_PARAMS, listAtBounds, listCalibrationF
 import { buildRegionTimeline } from "../model/history/timeline";
 import { resolveMethodology, type PolicyLeversV2 } from "../model/methodology";
 import { sanitizeHistoryBundleWithReport } from "../security/sanitize";
+import { SCENARIO_PRESETS } from "../model/presets";
 import {
   PARTY_ORDER,
   PARTY_META,
@@ -38,55 +39,72 @@ const SummaryCounter = lazy(() =>
   import("../components/PublicHousingCounter").then((m) => ({ default: m.SummaryCounter }))
 );
 
-function MicrodataWarningsBanner({ params }: { params: ReturnType<typeof useModel>["params"] }) {
-  const micro = params.advanced?.microDistributions;
-  const enabled = !!micro?.enabled;
-  const meta = (micro?.microdata as any)?.meta as
-    | {
-        warnings?: string[];
-        notes?: string[];
-        inferredMappings?: boolean;
-      }
-    | undefined;
+/* ================================================================
+   POLICY PRESETS — grouped for the hero dropdown
+   ================================================================ */
+const REFORM_PRESETS = SCENARIO_PRESETS.filter((p) =>
+  ["ng-remove", "ng-remove-fast", "ng-restore", "ownership-cap", "ownership-cap-aggressive", "supply-boost", "comprehensive", "cgt-repeal"].includes(p.id)
+);
 
-  if (!enabled) return null;
+const EXPERT_PRESETS = SCENARIO_PRESETS.filter((p) =>
+  ["land-tax-transition", "macroprudential-tightening", "short-stay-clampdown", "public-housing-build", "migration-shock-down", "immigration-cap", "all-levers"].includes(p.id)
+);
 
-  const warnings = (meta?.warnings ?? []).slice();
-  const inferred = !!meta?.inferredMappings;
+/* ================================================================
+   HELPER COMPONENTS
+   ================================================================ */
 
-  // Missing microdata is a common failure mode; make it explicit.
-  const byCity = (micro?.microdata as any)?.byCity as Record<string, unknown[]> | undefined;
-  if (!byCity || Object.keys(byCity).length === 0) {
-    warnings.unshift("Microdata is enabled, but no byCity microdata was provided. Stress metrics will use the proxy.");
+function fmtAUD(n: number): string {
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(n);
+}
+
+function fmtPctSigned(n: number): string {
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${(n * 100).toFixed(1)}%`;
+}
+
+function WarningsBanner({ params, calibrationReport }: { params: any; calibrationReport: any }) {
+  const policy = toPolicyV2(params.policy as any);
+  const activeCalibrationFirst = listCalibrationFirstActive(policy);
+  const atBounds = listAtBounds(policy);
+
+  const calEnabled = !!params.advanced?.calibration?.enabled;
+  const hasHistory = !!params.advanced?.calibration?.historyByCity;
+
+  const warnings: string[] = [];
+  if (activeCalibrationFirst.length > 0 && (!calEnabled || !hasHistory)) {
+    warnings.push("Calibration-first levers are active but no historical series are attached. Treat results as directional.");
+  }
+  if (atBounds.length > 0) {
+    warnings.push(`Some levers are at hard bounds: ${atBounds.slice(0, 4).join(", ")}${atBounds.length > 4 ? "…" : ""}`);
+  }
+  (calibrationReport?.warnings ?? []).slice(0, 2).forEach((w: string) => warnings.push(w));
+
+  const hb = params.advanced?.calibration?.historyBundle as any;
+  if (hb) {
+    const rep = sanitizeHistoryBundleWithReport(hb).report;
+    if (rep.ok && (rep.droppedCityKeys || rep.cappedPoints)) {
+      warnings.push(`History bundle sanitized: dropped ${rep.droppedCityKeys} city keys, capped ${rep.cappedPoints} points.`);
+    }
   }
 
-  if (!inferred && warnings.length === 0) return null;
+  const micro = params.advanced?.microDistributions;
+  if (micro?.enabled) {
+    const byCity = (micro?.microdata as any)?.byCity as Record<string, unknown[]> | undefined;
+    if (!byCity || Object.keys(byCity).length === 0) {
+      warnings.push("Microdata enabled but no byCity data provided. Stress metrics use the proxy.");
+    }
+  }
+
+  if (warnings.length === 0) return null;
 
   return (
-    <div className="callout warning" style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 700, marginBottom: 4 }}>Microdata mapping inferred</div>
-      <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-        This run is using inferred column mappings for income/tenure/weights. For reliability, export the normalized
-        schema (`income_annual_aud`, `tenure_code` as R/M/O, optional `weight`) or pass `fields` + `tenureMap`
-        explicitly.
-      </div>
-      {warnings.length > 0 && (
-        <ul style={{ margin: "8px 0 0 18px", fontSize: 13 }}>
-          {warnings.slice(0, 3).map((w, i) => (
-            <li key={i}>{w}</li>
-          ))}
-        </ul>
-      )}
-      {meta?.notes?.length ? (
-        <details style={{ marginTop: 8 }}>
-          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Show detection details</summary>
-          <ul style={{ margin: "8px 0 0 18px", fontSize: 12, color: "var(--muted)" }}>
-            {meta.notes.slice(0, 12).map((n, i) => (
-              <li key={i}>{n}</li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
+    <div className="xp-warnings">
+      {warnings.map((w, i) => (
+        <div key={i} className="callout warning" style={{ padding: "8px 12px", fontSize: 13 }}>
+          {w}
+        </div>
+      ))}
     </div>
   );
 }
@@ -112,141 +130,48 @@ type PolicyDifficulty = {
 function assessPolicyDifficulty(policy: PolicyLeversV2): PolicyDifficulty {
   let score = 10;
   const factors: PolicyDifficulty["factors"] = {
-    federal: [] as string[],
-    state: [] as string[],
-    industry: [] as string[],
-    implementation: [] as string[],
-    severity: {
-      federal: "Low",
-      state: "Low",
-      industry: "Low",
-      implementation: "Low",
-    },
+    federal: [], state: [], industry: [], implementation: [],
+    severity: { federal: "Low", state: "Low", industry: "Low", implementation: "Low" },
   };
 
   if (policy.negativeGearingMode !== "none") {
     score += 22;
-    factors.federal.push("Federal tax changes are sensitive to Senate cross‑bench and independents.");
-    factors.industry.push("Investor tax concessions are politically sensitive and face strong coordinated pushback.");
-    factors.industry.push("Past reform attempts suggest high likelihood of campaign-style opposition.");
+    factors.federal.push("Federal tax changes are sensitive to Senate cross-bench.");
+    factors.industry.push("Investor tax concessions face strong coordinated pushback.");
   }
   if (policy.ownershipCapEnabled) {
     score += 28;
     factors.implementation.push("Ownership caps trigger legal risk and constitutional challenges.");
-    factors.implementation.push("Administrative enforcement complexity can delay passage and weaken design.");
-    factors.industry.push("Likely opposition from property investment lobbies and landlord associations.");
+    factors.industry.push("Likely opposition from property investment lobbies.");
   }
   if (policy.taxInvestor.landTaxShift > 0.2 || policy.stampDutyRateDelta < -0.01) {
     score += 12;
-    factors.federal.push("State revenue exposure creates intergovernmental friction.");
-    factors.state.push("State parliaments control land tax and stamp duty; reform requires state buy‑in.");
-    factors.implementation.push("Transition funding and compensation become major negotiation points.");
+    factors.state.push("State revenue exposure creates intergovernmental friction.");
   }
-  if (policy.taxInvestor.cgtDiscountDelta < -0.1) {
-    score += 10;
-    factors.federal.push("Federal tax measures are exposed to Senate cross‑bench bargaining.");
-    factors.industry.push("CGT discount reductions often trigger coordinated investor and media lobbying.");
-  }
+  if (policy.taxInvestor.cgtDiscountDelta < -0.1) { score += 10; factors.federal.push("CGT discount reductions trigger investor lobbying."); }
   if (policy.taxInvestor.vacancyTaxIntensity > 0.2 || policy.taxInvestor.shortStayRegulationIntensity > 0.2) {
-    score += 8;
-    factors.industry.push("Short‑stay platforms, hosts, and landlord groups commonly oppose vacancy/STR rules.");
-    factors.industry.push("Tourism operators and local business groups often weigh in on short‑stay rules.");
-    factors.implementation.push("Local government capacity to enforce is a common bottleneck.");
+    score += 8; factors.industry.push("Short-stay platforms and hosts commonly oppose vacancy/STR rules.");
   }
-  if (policy.rental.rentRegulationCoverage > 0.2 || policy.rental.rentRegulationCap != null) {
-    score += 16;
-    factors.state.push("Tenancy law changes are state‑based and can vary widely by jurisdiction.");
-    factors.industry.push("Rent caps or broad coverage face landlord, agent, and investor opposition.");
-    factors.industry.push("Risk of reduced rental listings is a frequent political argument.");
-  }
+  if (policy.rental.rentRegulationCoverage > 0.2) { score += 16; factors.state.push("Tenancy law changes vary by jurisdiction."); }
   if (policy.credit.serviceabilityBufferDelta > 0.01 || policy.credit.dtiCapTightness > 0.2) {
-    score += 8;
-    factors.federal.push("Macro‑prudential tightening faces regulator caution (APRA/RBA).");
-    factors.industry.push("Banking sector lobbying is influential on prudential settings.");
-    factors.industry.push("Credit tightening can be framed as first‑home‑buyer exclusion.");
+    score += 8; factors.federal.push("Macro-prudential tightening faces regulator caution.");
   }
-  if (policy.publicCommunity.publicHousingBuildBoost > 0.1 || policy.publicCommunity.publicHousingAcquisitionSharePerYear > 0.02) {
-    score += 10;
-    factors.state.push("Large public build/acquisition requires long‑term funding certainty.");
-    factors.industry.push("Construction capacity and land availability constrain delivery speed.");
-    factors.implementation.push("Procurement timelines and social housing pipeline governance add friction.");
-  }
+  if (policy.publicCommunity.publicHousingBuildBoost > 0.1) { score += 10; factors.state.push("Large public builds require long-term funding certainty."); }
   if (policy.supplyBoost > 0.15 || policy.planning.upzoningIntensity > 0.3) {
-    score += 9;
-    factors.state.push("Planning reforms are state‑led with local council veto points.");
-    factors.state.push("Local planning appeal processes can slow delivery.");
-    factors.industry.push("Upzoning and rapid supply shifts face NIMBY opposition.");
-    factors.implementation.push("Infrastructure sequencing and developer feasibility can slow rollouts.");
+    score += 9; factors.state.push("Planning reforms face local council veto points.");
   }
   if (policy.migration.netOverseasMigrationShock < -0.1) {
-    score += 7;
-    factors.federal.push("Federal migration settings can be sensitive to Senate cross‑bench deals.");
-    factors.industry.push("Education sector, business groups, and unions often lobby on migration settings.");
-    factors.implementation.push("Migration cuts intersect with workforce shortages and growth objectives.");
+    score += 7; factors.federal.push("Migration settings intersect with workforce shortages.");
   }
+  if (policy.subsidies.firstHomeBuyerSubsidyIntensity > 0.15) score += 4;
+  if (policy.rental.rentAssistanceIntensity > 0.15) score += 4;
+  if (policy.taxInvestor.foreignBuyerRestrictionIntensity > 0.3) score += 6;
+  if (policy.demandReduction > 0.1) score += 5;
 
-  if (policy.subsidies.firstHomeBuyerSubsidyIntensity > 0.15) {
-    score += 4;
-    factors.federal.push("Budget scrutiny increases when subsidies are large or ongoing.");
-    factors.industry.push("Large buyer subsidies can be criticized for inflating prices.");
-  }
-  if (policy.rental.rentAssistanceIntensity > 0.15) {
-    score += 4;
-    factors.federal.push("Rent assistance expansions increase fiscal costs and budget scrutiny.");
-    factors.industry.push("Landlord pass‑through risk is a common policy critique.");
-  }
-  if (policy.taxInvestor.foreignBuyerRestrictionIntensity > 0.3) {
-    score += 6;
-    factors.federal.push("Diplomatic and trade considerations can slow federal reforms.");
-    factors.industry.push("Foreign buyer restrictions can create trade and investment tensions.");
-  }
-  if (policy.taxInvestor.vacancyTaxIntensity > 0.4) {
-    score += 4;
-    factors.implementation.push("High vacancy tax settings raise enforcement and measurement challenges.");
-    factors.implementation.push("Data sharing between agencies becomes a political and technical hurdle.");
-  }
-  if (policy.credit.investorLendingLimitTightness > 0.3) {
-    score += 6;
-    factors.federal.push("APRA/RBA coordination can slow rapid changes.");
-    factors.industry.push("Investor lending limits often meet coordinated banking sector pushback.");
-  }
-  if (policy.planning.infrastructureEnablement > 0.4) {
-    score += 6;
-    factors.state.push("Infrastructure enablement requires multi‑year capital plans and approvals.");
-    factors.implementation.push("State treasury capacity and project pipelines can constrain timing.");
-  }
-  if (policy.publicCommunity.conversionToSocialSharePerYear > 0.02) {
-    score += 6;
-    factors.implementation.push("Rental conversion programs can face legal and compensation disputes.");
-    factors.industry.push("Private rental market groups typically resist compulsory conversion programs.");
-  }
-  if (policy.ownershipCapEnabled && policy.ownershipCapEnforcement > 0.5) {
-    score += 6;
-    factors.implementation.push("High enforcement levels can trigger privacy and compliance pushback.");
-    factors.implementation.push("Data matching across agencies raises governance and civil‑liberty concerns.");
-  }
-  if (policy.negativeGearingMode === "remove" && policy.negativeGearingIntensity > 0.5) {
-    score += 6;
-    factors.industry.push("Rapid phase‑outs often amplify short‑term political backlash.");
-    factors.industry.push("Investor sentiment impacts can become a headline risk.");
-  }
-  if (policy.demandReduction > 0.1) {
-    score += 5;
-    factors.industry.push("Large demand reductions can be framed as harming household wealth.");
-    factors.industry.push("Retiree and investor advocacy groups can mobilize quickly.");
-  }
-  if (policy.supplyBoost > 0.2) {
-    score += 5;
-    factors.industry.push("Construction unions and contractors can resist aggressive cost compression.");
-    factors.implementation.push("Very large supply boosts may be seen as unrealistic within workforce limits.");
-  }
-
-  factors.implementation.push("Implementation complexity increases when multiple levers are combined.");
+  factors.implementation.push("Complexity increases when multiple levers are combined.");
   factors.federal.push("Stakeholder alignment (state vs federal) is often the decisive constraint.");
-  factors.state.push("State legislative calendars and election cycles can delay or dilute reforms.");
 
-  const severityFromCount = (n: number): "Low" | "Medium" | "High" =>
-    n >= 4 ? "High" : n >= 2 ? "Medium" : "Low";
+  const severityFromCount = (n: number): "Low" | "Medium" | "High" => n >= 4 ? "High" : n >= 2 ? "Medium" : "Low";
   factors.severity = {
     federal: severityFromCount(factors.federal.length),
     state: severityFromCount(factors.state.length),
@@ -255,154 +180,19 @@ function assessPolicyDifficulty(policy: PolicyLeversV2): PolicyDifficulty {
   };
 
   score = Math.min(100, score);
-
-  const rating =
-    score <= 18 ? "Easy" :
-    score <= 32 ? "Moderate" :
-    score <= 52 ? "Challenging" :
-    score <= 72 ? "Hard" : "Highly Improbable";
-
-  const summary = rating === "Easy"
-    ? "Low conflict with entrenched interests; likely to pass if politically prioritized."
-    : rating === "Moderate"
-    ? "Some pushback expected, but feasible with negotiation."
-    : rating === "Challenging"
-    ? "Multiple stakeholder veto points; passage likely needs strong mandate."
-    : rating === "Hard"
-    ? "Significant industry and political resistance expected."
-    : "Would likely require exceptional political alignment or crisis conditions.";
+  const rating = score <= 18 ? "Easy" : score <= 32 ? "Moderate" : score <= 52 ? "Challenging" : score <= 72 ? "Hard" : "Highly Improbable";
+  const summary = rating === "Easy" ? "Low conflict; likely to pass if politically prioritized."
+    : rating === "Moderate" ? "Some pushback expected, but feasible with negotiation."
+    : rating === "Challenging" ? "Multiple stakeholder veto points; passage likely needs strong mandate."
+    : rating === "Hard" ? "Significant industry and political resistance expected."
+    : "Would require exceptional political alignment or crisis conditions.";
 
   return { rating, score, factors, summary };
 }
 
-function ScopeIndicator({ scope, cityCount }: { scope: ReturnType<typeof useModel>["scope"]; cityCount: number }) {
-  const label = scopeLabel(scope);
-  const icon =
-    scope.level === "national" ? "🇦🇺" :
-    scope.level === "state" ? "📍" : "🏙️";
-
-  return (
-    <div className="scope-badge">
-      <span>{icon}</span>
-      <span>{label}</span>
-      {scope.level === "national" && (
-        <span className="muted">({cityCount} cities)</span>
-      )}
-    </div>
-  );
-}
-
-function CalibrationWarningsBanner({
-  params,
-  calibrationReport,
-}: {
-  params: ReturnType<typeof useModel>["params"];
-  calibrationReport: ReturnType<typeof useModel>["calibrationReport"];
-}) {
-  const policy = toPolicyV2(params.policy as any);
-  const activeCalibrationFirst = listCalibrationFirstActive(policy);
-  const atBounds = listAtBounds(policy);
-
-  const calEnabled = !!params.advanced?.calibration?.enabled;
-  const hasHistory = !!params.advanced?.calibration?.historyByCity;
-
-  const warnings: string[] = [];
-  if (activeCalibrationFirst.length > 0 && (!calEnabled || !hasHistory)) {
-    warnings.push(
-      "Calibration-first levers are active but no historical series are attached. Treat results as directional."
-    );
-  }
-  if (atBounds.length > 0) {
-    warnings.push(
-      `Some levers are at hard bounds (the model clamps to realistic ranges): ${atBounds.slice(0, 4).join(", ")}${
-        atBounds.length > 4 ? "…" : ""
-      }`
-    );
-  }
-  (calibrationReport?.warnings ?? []).slice(0, 2).forEach((w) => warnings.push(w));
-
-  if (warnings.length === 0) return null;
-
-  return (
-    <div className="callout warning" style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 800, marginBottom: 4 }}>Calibration & bounds</div>
-      <ul style={{ margin: "8px 0 0 18px", fontSize: 13 }}>
-        {warnings.map((w, i) => (
-          <li key={i}>{w}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function HistoryWarningsBanner({
-  params,
-}: {
-  params: ReturnType<typeof useModel>["params"];
-}) {
-  const bundle = params.advanced?.calibration?.historyBundle as any;
-  if (!bundle) return null;
-  const warnings: string[] = [];
-  const metaWarnings = bundle?.meta?.warnings as string[] | undefined;
-  const notes = bundle?.meta?.notes as string[] | undefined;
-  if (Array.isArray(metaWarnings) && metaWarnings.length) warnings.push(...metaWarnings.slice(0, 3));
-  if (warnings.length === 0) return null;
-  return (
-    <div className="callout warning" style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 800, marginBottom: 4 }}>Historical data coverage</div>
-      <ul style={{ margin: "8px 0 0 18px", fontSize: 13 }}>
-        {warnings.map((w, i) => (
-          <li key={i}>{w}</li>
-        ))}
-      </ul>
-      {Array.isArray(notes) && notes.length ? (
-        <details style={{ marginTop: 8 }}>
-          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Show history notes</summary>
-          <ul style={{ margin: "8px 0 0 18px", fontSize: 12, color: "var(--muted)" }}>
-            {notes.slice(0, 10).map((n, i) => (
-              <li key={i}>{n}</li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </div>
-  );
-}
-
-function SanitizationBanner({ params }: { params: ReturnType<typeof useModel>["params"] }) {
-  const msgs: string[] = [];
-
-  const microMeta = (params.advanced?.microDistributions as any)?.microdata?.meta as any;
-  const m = microMeta?.sanitization;
-  if (m && (m.droppedCityKeys || m.droppedRows || m.truncatedRows)) {
-    msgs.push(
-      `Microdata sanitized: dropped ${m.droppedCityKeys} invalid city keys, dropped ${m.droppedRows} non-object rows, truncated ${m.truncatedRows} rows (cap ${m.maxRowsPerCity}/city).`
-    );
-  }
-
-  const hb = params.advanced?.calibration?.historyBundle as any;
-  if (hb) {
-    const rep = sanitizeHistoryBundleWithReport(hb).report;
-    if (rep.ok && (rep.droppedCityKeys || rep.cappedPoints)) {
-      msgs.push(
-        `History bundle sanitized: dropped ${rep.droppedCityKeys} invalid city keys, capped ${rep.cappedPoints} year-points (max ${rep.maxYears} years).`
-      );
-    }
-  }
-
-  if (msgs.length === 0) return null;
-  return (
-    <div className="callout warning" style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 800, marginBottom: 4 }}>Input sanitization applied</div>
-      <ul style={{ margin: "8px 0 0 18px", fontSize: 13 }}>
-        {msgs.map((m, i) => (
-          <li key={i}>{m}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
+/* ================================================================
+   MAIN PAGE COMPONENT
+   ================================================================ */
 export function ExploreModel() {
   const {
     scope,
@@ -416,37 +206,45 @@ export function ExploreModel() {
     focusYear,
     setFocusYear,
     selectedPresets,
+    togglePreset,
   } = useModel();
 
   const { years } = scopedView;
   const first = years[0];
 
+  /* Bottom sheet state for advanced controls */
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") closeSheet(); };
+    document.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", handler); document.body.style.overflow = ""; };
+  }, [sheetOpen, closeSheet]);
+
+  /* Loading state */
   if (!first || years.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: "center" }}>
-        <div style={{ fontSize: 24, marginBottom: 16 }}>⏳</div>
-        <div className="h2">Loading simulation...</div>
-        <div className="muted">Calculating outcomes for {params.cities.length} cities</div>
+      <div style={{ padding: 80, textAlign: "center" }}>
+        <div style={{ fontSize: 32, marginBottom: 16, animation: "spin 1s linear infinite" }}>⏳</div>
+        <h2 className="h2">Loading simulation...</h2>
+        <p className="muted">Calculating outcomes for {params.cities.length} cities</p>
       </div>
     );
   }
 
-  // Get decile data from city-level if available
-  const decileRows =
-    selectedCityData?.years[selectedCityData.years.length - 1]?.deciles.rows ?? null;
-
-  // Timeline for charts (historical + projected if available and enabled)
+  /* Derived data */
+  const decileRows = selectedCityData?.years[selectedCityData.years.length - 1]?.deciles.rows ?? null;
   const { c } = resolveMethodology(params);
   const timelineView = showHistory
     ? buildRegionTimeline({
-        outputs,
-        scope,
+        outputs, scope,
         historyBundle: params.advanced?.calibration?.historyBundle as any,
-        cities: params.cities,
-        c,
+        cities: params.cities, c,
         stampDutyRate: c.stampDutyEffectiveRate + ((params.policy as any).stampDutyRateDelta ?? 0),
-        year0: first.year,
-        indexBase: historyIndexBase,
+        year0: first.year, indexBase: historyIndexBase,
       })
     : null;
   const chartSeries = timelineView ? timelineView.timeline : years;
@@ -461,14 +259,12 @@ export function ExploreModel() {
     };
   })();
 
+  /* Policy analysis */
   const policy = toPolicyV2(params.policy as any);
   const defaultPolicy = DEFAULT_POLICY_LEVERS_V2;
   const policyDifficulty = assessPolicyDifficulty(policy);
 
-  const getByPath = (obj: any, path: string) => {
-    return path.split(".").reduce((acc, key) => (acc ? acc[key] : undefined), obj);
-  };
-
+  const getByPath = (obj: any, path: string) => path.split(".").reduce((acc, key) => (acc ? acc[key] : undefined), obj);
   const formatPolicyValue = (key: string, value: any): string => {
     if (value == null) return "n/a";
     if (key.includes("rentRegulationCap")) return `${Math.round(value * 100)}% cap`;
@@ -485,88 +281,17 @@ export function ExploreModel() {
     POLICY_PARAMS.forEach((param) => {
       const current = getByPath(policy as any, param.key);
       const baseline = getByPath(defaultPolicy as any, param.key);
-      const different = param.key === "rental.rentRegulationCap" ? current !== baseline : current !== baseline;
-      if (!different) return;
-      changes.push({
-        key: param.key,
-        label: param.label,
-        value: formatPolicyValue(param.key, current),
-        parties: POLICY_KEY_PARTIES[param.key] ?? [],
-      });
+      if (current === baseline) return;
+      changes.push({ key: param.key, label: param.label, value: formatPolicyValue(param.key, current), parties: POLICY_KEY_PARTIES[param.key] ?? [] });
     });
-
-    if (policy.negativeGearingMode !== defaultPolicy.negativeGearingMode) {
-      changes.push({
-        key: "negativeGearingMode",
-        label: "Negative gearing mode",
-        value: policy.negativeGearingMode,
-        parties: POLICY_KEY_PARTIES.negativeGearingMode ?? [],
-      });
-    }
-    if (policy.negativeGearingIntensity !== defaultPolicy.negativeGearingIntensity) {
-      changes.push({
-        key: "negativeGearingIntensity",
-        label: "Negative gearing intensity",
-        value: formatPolicyValue("negativeGearingIntensity", policy.negativeGearingIntensity),
-        parties: POLICY_KEY_PARTIES.negativeGearingIntensity ?? [],
-      });
-    }
-    if (policy.ownershipCapEnabled !== defaultPolicy.ownershipCapEnabled) {
-      changes.push({
-        key: "ownershipCapEnabled",
-        label: "Ownership cap",
-        value: policy.ownershipCapEnabled ? "enabled" : "disabled",
-        parties: POLICY_KEY_PARTIES.ownershipCapEnabled ?? [],
-      });
-    }
-    if (policy.ownershipCapEnforcement !== defaultPolicy.ownershipCapEnforcement) {
-      changes.push({
-        key: "ownershipCapEnforcement",
-        label: "Ownership cap enforcement",
-        value: formatPolicyValue("ownershipCapEnforcement", policy.ownershipCapEnforcement),
-        parties: POLICY_KEY_PARTIES.ownershipCapEnforcement ?? [],
-      });
-    }
-    if (policy.excessInvestorStockShare !== defaultPolicy.excessInvestorStockShare) {
-      changes.push({
-        key: "excessInvestorStockShare",
-        label: "Excess investor stock share",
-        value: formatPolicyValue("excessInvestorStockShare", policy.excessInvestorStockShare),
-        parties: POLICY_KEY_PARTIES.excessInvestorStockShare ?? [],
-      });
-    }
-    if (policy.divestmentPhased !== defaultPolicy.divestmentPhased) {
-      changes.push({
-        key: "divestmentPhased",
-        label: "Divestment phasing",
-        value: policy.divestmentPhased ? "phased" : "immediate",
-        parties: POLICY_KEY_PARTIES.divestmentPhased ?? [],
-      });
-    }
-    if (policy.stampDutyRateDelta !== defaultPolicy.stampDutyRateDelta) {
-      changes.push({
-        key: "stampDutyRateDelta",
-        label: "Stamp duty rate delta",
-        value: formatPolicyValue("stampDutyRateDelta", policy.stampDutyRateDelta),
-        parties: POLICY_KEY_PARTIES.stampDutyRateDelta ?? [],
-      });
-    }
-    if (policy.mortgageRateDelta !== defaultPolicy.mortgageRateDelta) {
-      changes.push({
-        key: "mortgageRateDelta",
-        label: "Mortgage rate delta",
-        value: formatPolicyValue("mortgageRateDelta", policy.mortgageRateDelta),
-        parties: POLICY_KEY_PARTIES.mortgageRateDelta ?? [],
-      });
-    }
-    if (policy.rampYears !== defaultPolicy.rampYears) {
-      changes.push({
-        key: "rampYears",
-        label: "Policy ramp years",
-        value: formatPolicyValue("rampYears", policy.rampYears),
-        parties: POLICY_KEY_PARTIES.rampYears ?? [],
-      });
-    }
+    if (policy.negativeGearingMode !== defaultPolicy.negativeGearingMode) changes.push({ key: "negativeGearingMode", label: "Negative gearing mode", value: policy.negativeGearingMode, parties: POLICY_KEY_PARTIES.negativeGearingMode ?? [] });
+    if (policy.negativeGearingIntensity !== defaultPolicy.negativeGearingIntensity) changes.push({ key: "negativeGearingIntensity", label: "NG intensity", value: formatPolicyValue("negativeGearingIntensity", policy.negativeGearingIntensity), parties: POLICY_KEY_PARTIES.negativeGearingIntensity ?? [] });
+    if (policy.ownershipCapEnabled !== defaultPolicy.ownershipCapEnabled) changes.push({ key: "ownershipCapEnabled", label: "Ownership cap", value: policy.ownershipCapEnabled ? "enabled" : "disabled", parties: POLICY_KEY_PARTIES.ownershipCapEnabled ?? [] });
+    if (policy.ownershipCapEnforcement !== defaultPolicy.ownershipCapEnforcement) changes.push({ key: "ownershipCapEnforcement", label: "Cap enforcement", value: formatPolicyValue("ownershipCapEnforcement", policy.ownershipCapEnforcement), parties: POLICY_KEY_PARTIES.ownershipCapEnforcement ?? [] });
+    if (policy.excessInvestorStockShare !== defaultPolicy.excessInvestorStockShare) changes.push({ key: "excessInvestorStockShare", label: "Excess investor stock", value: formatPolicyValue("excessInvestorStockShare", policy.excessInvestorStockShare), parties: POLICY_KEY_PARTIES.excessInvestorStockShare ?? [] });
+    if (policy.divestmentPhased !== defaultPolicy.divestmentPhased) changes.push({ key: "divestmentPhased", label: "Divestment phasing", value: policy.divestmentPhased ? "phased" : "immediate", parties: POLICY_KEY_PARTIES.divestmentPhased ?? [] });
+    if (policy.stampDutyRateDelta !== defaultPolicy.stampDutyRateDelta) changes.push({ key: "stampDutyRateDelta", label: "Stamp duty delta", value: formatPolicyValue("stampDutyRateDelta", policy.stampDutyRateDelta), parties: POLICY_KEY_PARTIES.stampDutyRateDelta ?? [] });
+    if (policy.rampYears !== defaultPolicy.rampYears) changes.push({ key: "rampYears", label: "Policy ramp", value: formatPolicyValue("rampYears", policy.rampYears), parties: POLICY_KEY_PARTIES.rampYears ?? [] });
     return changes;
   })();
 
@@ -574,287 +299,450 @@ export function ExploreModel() {
   const presetParties = activePresets.flatMap((p) => PRESET_PARTIES[p] ?? []);
   const manualParties = manualChanges.flatMap((c) => c.parties);
   const partySummary = summarizePartySupport([...presetParties, ...manualParties]);
+  const partyKeyLabel = partySummary.top.length ? partySummary.top.map((p) => PARTY_META[p].label).join(" / ") : "None (baseline)";
 
-  const partyKeyLabel = partySummary.top.length
-    ? partySummary.top.map((p) => PARTY_META[p].label).join(" / ")
-    : "None (baseline only)";
+  /* Summary stats for map info cards */
+  const lastYear = years[years.length - 1];
+  const priceChange = first.medianPrice > 0 ? (lastYear.medianPrice - first.medianPrice) / first.medianPrice : 0;
+  const rentChange = first.medianAnnualRent > 0 ? (lastYear.medianAnnualRent - first.medianAnnualRent) / first.medianAnnualRent : 0;
+  const dwellingGrowth = first.dwellingStock > 0 ? (lastYear.dwellingStock - first.dwellingStock) : 0;
+
+  /* Feasibility meter color */
+  const feasColor = policyDifficulty.score <= 18 ? "#16a34a" : policyDifficulty.score <= 32 ? "#22c55e" : policyDifficulty.score <= 52 ? "#ca8a04" : policyDifficulty.score <= 72 ? "#ea580c" : "#dc2626";
 
   return (
-    <div className="explore-layout">
-      {/* Sidebar with controls */}
-      <aside className="explore-sidebar">
-        <ControlsPanel />
-      </aside>
+    <>
+      {/* FAB for advanced controls */}
+      <button type="button" className="fab" onClick={() => setSheetOpen(true)} aria-label="Open advanced controls" aria-expanded={sheetOpen}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-.97l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.18 7.18 0 0 0-1.67-.97l-.38-2.65A.49.49 0 0 0 14 2h-4a.49.49 0 0 0-.49.42l-.38 2.65c-.61.25-1.17.59-1.67.97l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.49.49 0 0 0 .12.64l2.11 1.65c-.04.32-.07.65-.07.97s.03.66.07.97l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.5.38 1.06.72 1.67.97l.38 2.65c.05.24.26.42.49.42h4c.24 0 .44-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.67-.97l2.49 1c.22.08.49 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65Z" fill="currentColor"/>
+        </svg>
+      </button>
 
-      {/* Main content area with charts */}
-      <div className="explore-main">
-        <div className="explore-header">
-          <div>
-            <h1 className="h1" style={{ margin: 0 }}>Explore the model</h1>
-            <p className="muted" style={{ margin: "4px 0 0 0", fontSize: 14 }}>
-              Adjust controls on the left. Results update instantly.
-            </p>
-            <p className="muted" style={{ margin: "6px 0 0 0", fontSize: 12 }}>
-              This model is a free tool developed by the not-for-profit consumer advocacy and research team at SOCii.
-            </p>
+      {/* Bottom sheet for advanced controls */}
+      {sheetOpen && (
+        <>
+          <div className="bottomSheetBackdrop" onClick={closeSheet} aria-hidden="true" />
+          <div className="bottomSheet" role="dialog" aria-modal="true" aria-label="Advanced controls">
+            <div className="bottomSheetHandle" />
+            <div className="bottomSheetHeader">
+              <h3 className="h3" style={{ margin: 0 }}>Advanced Controls</h3>
+              <button type="button" className="drawerClose" onClick={closeSheet} aria-label="Close controls">✕</button>
+            </div>
+            <div className="bottomSheetBody">
+              <ControlsPanel />
+            </div>
           </div>
-          <ScopeIndicator scope={scope} cityCount={params.cities.length} />
-        </div>
+        </>
+      )}
 
-        <CalibrationWarningsBanner params={params} calibrationReport={calibrationReport} />
-        <SanitizationBanner params={params} />
-        <HistoryWarningsBanner params={params} />
-        <MicrodataWarningsBanner params={params} />
+      <div className="explore-flow">
 
-        {/* Year filter for fast map focus */}
-        <div className="card" style={{ padding: 12, marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ fontWeight: 700 }}>Year focus</div>
-              <div className="muted" style={{ fontSize: 12 }}>
-                Jump to a specific year; charts and map will highlight that year.
+        {/* ============================================
+            SECTION 1 — HERO: POLICY SELECTION CTA
+           ============================================ */}
+        <section className="xp-hero" aria-labelledby="xp-hero-heading">
+          <div className="xp-hero-inner">
+            <h1 id="xp-hero-heading">What happens if Australia changes its housing policy?</h1>
+            <p className="xp-hero-subtitle">
+              Select one or more policy reforms below, then scroll to see how they affect housing prices,
+              rents, and affordability across the country.
+            </p>
+
+            <div className="xp-hero-controls">
+              {/* Quick-pick reform pills */}
+              <div style={{ flex: "1 1 100%" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b", marginBottom: 8 }}>
+                  Reforms
+                </div>
+                <div className="xp-hero-pills">
+                  {REFORM_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`xp-policy-pill ${selectedPresets.includes(preset.id) ? "active" : ""}`}
+                      onClick={() => togglePreset(preset.id)}
+                      aria-pressed={selectedPresets.includes(preset.id)}
+                    >
+                      <span className="pill-check" aria-hidden="true">
+                        {selectedPresets.includes(preset.id) ? "✓" : ""}
+                      </span>
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Expert presets */}
+              <div style={{ flex: "1 1 100%" }}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b", marginBottom: 8, marginTop: 10 }}>
+                  Expert / Advanced
+                </div>
+                <div className="xp-hero-pills">
+                  {EXPERT_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`xp-policy-pill ${selectedPresets.includes(preset.id) ? "active" : ""}`}
+                      onClick={() => togglePreset(preset.id)}
+                      aria-pressed={selectedPresets.includes(preset.id)}
+                    >
+                      <span className="pill-check" aria-hidden="true">
+                        {selectedPresets.includes(preset.id) ? "✓" : ""}
+                      </span>
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions row */}
+              <div className="xp-hero-actions">
+                <button
+                  type="button"
+                  className="xp-btn-advanced"
+                  onClick={() => setSheetOpen(true)}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M3 17v2h6v-2H3ZM3 5v2h10V5H3Zm10 16v-2h8v-2h-8v-2h-2v6h2ZM7 9v2H3v2h4v2h2V9H7Zm14 4v-2H11v2h10Zm-6-4h2V7h4V5h-4V3h-2v6Z" fill="currentColor"/>
+                  </svg>
+                  Fine-tune controls
+                </button>
+
+                {selectedPresets.length > 1 && (
+                  <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                    Stacking {selectedPresets.length} scenarios — effects combine
+                  </span>
+                )}
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <label htmlFor="explore-year-focus" className="sr-only">Focus year</label>
+
+            {/* Scope row */}
+            <div className="xp-scope-row">
+              <div className="scope-badge">
+                <span>{scope.level === "national" ? "🇦🇺" : scope.level === "state" ? "📍" : "🏙️"}</span>
+                <span>{scopeLabel(scope)}</span>
+                {scope.level === "national" && <span style={{ opacity: 0.7 }}>({params.cities.length} cities)</span>}
+              </div>
+              <span style={{ fontSize: 12, color: "#64748b" }}>
+                This model is a free tool by the not-for-profit research team at SOCii. Results update instantly.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECTION 2 — MAP + KEY METRICS
+           ============================================ */}
+        <section className="xp-section xp-map-section" aria-labelledby="xp-map-heading">
+          <div className="xp-section-inner">
+            <WarningsBanner params={params} calibrationReport={calibrationReport} />
+
+            <Suspense fallback={<div className="card" style={{ padding: 32, textAlign: "center" }}>Loading map…</div>}>
+              <AustraliaCrisisMap
+                outputs={outputs}
+                params={params as any}
+                year={selectedYear}
+                historyBundle={params.advanced?.calibration?.historyBundle as any}
+                title={`Regional crisis heatmap — ${scopeLabel(scope)}`}
+                scope={scope}
+              />
+            </Suspense>
+
+            <div className="xp-map-meta">
+              <div className="xp-map-card">
+                <div className="xp-map-card-title">Median price change</div>
+                <div className="xp-map-card-value" style={{ color: priceChange > 0.5 ? "#dc2626" : priceChange > 0.2 ? "#ca8a04" : "#16a34a" }}>
+                  {fmtPctSigned(priceChange)}
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  {fmtAUD(first.medianPrice)} → {fmtAUD(lastYear.medianPrice)} over {params.years} years
+                </div>
+              </div>
+              <div className="xp-map-card">
+                <div className="xp-map-card-title">Median rent change</div>
+                <div className="xp-map-card-value" style={{ color: rentChange > 0.4 ? "#dc2626" : rentChange > 0.15 ? "#ca8a04" : "#16a34a" }}>
+                  {fmtPctSigned(rentChange)}
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  {fmtAUD(first.medianAnnualRent)}/yr → {fmtAUD(lastYear.medianAnnualRent)}/yr
+                </div>
+              </div>
+              <div className="xp-map-card">
+                <div className="xp-map-card-title">Net new dwellings</div>
+                <div className="xp-map-card-value">
+                  {dwellingGrowth > 0 ? "+" : ""}{new Intl.NumberFormat("en-AU").format(Math.round(dwellingGrowth))}
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  Total stock growth over simulation period
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECTION 3 — HOUSING PRICES / RENTAL PRICES
+           ============================================ */}
+        <section className="xp-section xp-charts-twin" aria-labelledby="xp-charts-heading">
+          <div className="xp-section-inner">
+            <h2 className="h2" id="xp-charts-heading" style={{ margin: "0 0 6px" }}>Price &amp; Rent Trajectories</h2>
+            <p className="muted" style={{ fontSize: 14, margin: "0 0 16px" }}>
+              How housing prices and rents evolve under your selected policies.
+            </p>
+
+            <div className="xp-charts-tip">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 16v-4m0-4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              Hover or tap a year on either chart to see that year highlighted on the map above.
+            </div>
+
+            <div className="xp-year-scrubber">
+              <label htmlFor="xp-year-select">Jump to year:</label>
               <select
-                id="explore-year-focus"
-                className="select-field"
+                id="xp-year-select"
                 value={selectedYear}
                 onChange={(e) => setFocusYear(Number(e.target.value))}
-                aria-label="Select focus year for charts and map"
               >
                 {(chartSeries as any).map((p: any) => (
-                  <option key={`yr-${p.year}`} value={p.year}>
-                    {p.year}
-                  </option>
+                  <option key={`yr-${p.year}`} value={p.year}>{p.year}</option>
                 ))}
               </select>
               <button
                 type="button"
-                className="btn-reset"
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, fontWeight: 600, minHeight: 38 }}
                 onClick={() => setFocusYear(null)}
-                aria-label="Return to latest year"
               >
                 Latest
               </button>
             </div>
-          </div>
-        </div>
 
-        {/* Regional crisis heatmap (national context, live-updating by hovered year) */}
-        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading map…</div>}>
-          <AustraliaCrisisMap
-            outputs={outputs}
-            params={params as any}
-            year={selectedYear}
-            historyBundle={params.advanced?.calibration?.historyBundle as any}
-            title={`Regional crisis heatmap — ${scopeLabel(scope)}`}
-            scope={scope}
-          />
-        </Suspense>
-
-        {/* Primary charts - immediately visible */}
-        <div className="chart-grid-primary">
-          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
-            <PriceVsBaseline
-              title="Housing prices"
-              series={chartSeries as any}
-              dataKey="medianPrice"
-              baseValue={baseValueForIndex.medianPrice}
-              cutoverYear={cutoverYear}
-              onHoverYear={setFocusYear}
-            />
-          </Suspense>
-          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
-            <PriceVsBaseline
-              title="Rents"
-              series={chartSeries as any}
-              dataKey="medianAnnualRent"
-              baseValue={baseValueForIndex.medianAnnualRent}
-              cutoverYear={cutoverYear}
-              onHoverYear={setFocusYear}
-            />
-          </Suspense>
-        </div>
-
-        {/* Summary metrics */}
-        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading summary…</div>}>
-          <SummaryCounter />
-        </Suspense>
-
-        {/* Wage vs Housing comparison */}
-        <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
-          <WageVsHousingChart
-            years={chartSeries as any}
-            scopeLabel={scopeLabel(scope)}
-            cutoverYear={cutoverYear}
-            onHoverYear={setFocusYear}
-          />
-        </Suspense>
-
-        {/* Secondary charts */}
-        <div className="chart-grid-secondary">
-          <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
-            <DwellingStockArea series={chartSeries as any} onHoverYear={setFocusYear} />
-          </Suspense>
-          {selectedCityData && (
-            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
-              <PolicyChannelsFlow series={selectedCityData.years} />
-            </Suspense>
-          )}
-        </div>
-
-        {/* Decile analysis */}
-        {decileRows && (
-          <div className="decile-section">
-            <div className="section-header">
-              <h2 className="h2" style={{ margin: 0 }}>Distributional impact</h2>
-              <span className="badge-warning">Proxy estimate</span>
+            <div className="chart-grid-primary">
+              <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+                <PriceVsBaseline
+                  title="Housing prices"
+                  series={chartSeries as any}
+                  dataKey="medianPrice"
+                  baseValue={baseValueForIndex.medianPrice}
+                  cutoverYear={cutoverYear}
+                  onHoverYear={setFocusYear}
+                />
+              </Suspense>
+              <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+                <PriceVsBaseline
+                  title="Rents"
+                  series={chartSeries as any}
+                  dataKey="medianAnnualRent"
+                  baseValue={baseValueForIndex.medianAnnualRent}
+                  cutoverYear={cutoverYear}
+                  onHoverYear={setFocusYear}
+                />
+              </Suspense>
             </div>
-            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading distribution…</div>}>
-              <DecileImpact rows={decileRows} />
+          </div>
+        </section>
+
+        {/* ============================================
+            WAGE VS HOUSING GROWTH — NATIONAL
+           ============================================ */}
+        <section className="xp-section xp-segment" aria-labelledby="xp-wage-heading">
+          <div className="xp-section-inner">
+            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+              <WageVsHousingChart
+                years={chartSeries as any}
+                scopeLabel={scopeLabel(scope)}
+                cutoverYear={cutoverYear}
+                onHoverYear={setFocusYear}
+              />
             </Suspense>
           </div>
+        </section>
+
+        {/* ============================================
+            HOUSING STOCK & POLICY EFFECTS
+           ============================================ */}
+        <section className="xp-section xp-segment" aria-labelledby="xp-secondary-heading">
+          <div className="xp-section-inner">
+            <h2 className="h2" id="xp-secondary-heading" style={{ margin: "0 0 12px" }}>Housing Stock &amp; Policy Effects</h2>
+            <div className="chart-grid-secondary">
+              <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+                <DwellingStockArea series={chartSeries as any} onHoverYear={setFocusYear} />
+              </Suspense>
+              {selectedCityData && (
+                <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading chart…</div>}>
+                  <PolicyChannelsFlow series={selectedCityData.years} />
+                </Suspense>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECTION 4 — POLICY SUMMARY + PARTY ALIGNMENT
+           ============================================ */}
+        <section className="xp-section xp-policy-summary" aria-labelledby="xp-policy-heading">
+          <div className="xp-section-inner">
+            <h2 className="h2" id="xp-policy-heading" style={{ margin: "0 0 6px" }}>Policy Summary &amp; Political Alignment</h2>
+            <p className="muted" style={{ fontSize: 13, margin: "0 0 16px" }}>
+              Summary of selected policies and their typical party associations. Informational only, not an endorsement.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Color key:</span>
+              {PARTY_ORDER.map((p) => <PartyChip key={`legend-${p}`} party={p} />)}
+            </div>
+
+            <div className="xp-policy-grid">
+              {/* Active presets */}
+              <div className="xp-policy-block">
+                <h3>Active presets</h3>
+                {activePresets.length === 0 ? (
+                  <p className="muted" style={{ fontSize: 13, margin: 0 }}>Baseline only (no preset selected).</p>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                    {activePresets.map((p) => (
+                      <li key={p} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span>{SCENARIO_PRESETS.find((sp) => sp.id === p)?.name ?? p}</span>
+                        {(PRESET_PARTIES[p] ?? []).map((party) => <PartyChip key={`${p}-${party}`} party={party} />)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Manual adjustments */}
+              <div className="xp-policy-block">
+                <h3>Manual adjustments</h3>
+                {manualChanges.length === 0 ? (
+                  <p className="muted" style={{ fontSize: 13, margin: 0 }}>No manual changes from baseline.</p>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                    {manualChanges.map((ch) => (
+                      <li key={ch.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <span>{ch.label}: <strong>{ch.value}</strong></span>
+                        {ch.parties.map((party) => <PartyChip key={`${ch.key}-${party}`} party={party as any} />)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Most represented party */}
+              <div className="xp-policy-block">
+                <h3>Most represented party</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700 }}>{partyKeyLabel}</span>
+                  {partySummary.top.map((p) => <PartyChip key={`top-${p}`} party={p} />)}
+                </div>
+                <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+                  Based on party associations across your selected policies.
+                </p>
+              </div>
+
+              {/* Feasibility assessment */}
+              <div className="xp-policy-block">
+                <h3>Feasibility &amp; pushback</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700 }}>{policyDifficulty.rating}</span>
+                  <span className="muted" style={{ fontSize: 12 }}>({policyDifficulty.score}/100)</span>
+                </div>
+                <div className="xp-feasibility-meter">
+                  <div className="xp-feasibility-fill" style={{ width: `${policyDifficulty.score}%`, background: feasColor }} />
+                </div>
+                <p className="muted" style={{ fontSize: 12, margin: "4px 0 0" }}>{policyDifficulty.summary}</p>
+
+                {Object.values(policyDifficulty.factors).some((xs) => Array.isArray(xs) && xs.length > 0) && (
+                  <div style={{ marginTop: 10, display: "grid", gap: 6, fontSize: 12 }}>
+                    {(
+                      [
+                        ["Federal", policyDifficulty.factors.federal, policyDifficulty.factors.severity.federal],
+                        ["State", policyDifficulty.factors.state, policyDifficulty.factors.severity.state],
+                        ["Industry", policyDifficulty.factors.industry, policyDifficulty.factors.severity.industry],
+                        ["Implementation", policyDifficulty.factors.implementation, policyDifficulty.factors.severity.implementation],
+                      ] as Array<[string, string[], "Low" | "Medium" | "High"]>
+                    ).map(([label, items, severity]) =>
+                      items.length ? (
+                        <details key={label} className="help-panel" style={{ padding: 8 }}>
+                          <summary className="help-panel-trigger" style={{ gap: 8, padding: "8px 10px", minHeight: 36 }}>
+                            <span>{label}</span>
+                            <span className="muted" style={{ fontSize: 11 }}>Severity: <strong>{severity}</strong></span>
+                          </summary>
+                          <div className="help-panel-content" style={{ padding: "0 10px 10px" }}>
+                            <ul style={{ margin: "6px 0 0 16px" }}>
+                              {items.map((f, i) => <li key={`${label}-${i}`}>{f}</li>)}
+                            </ul>
+                          </div>
+                        </details>
+                      ) : null
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECTION 5 — SUMMARY METRICS
+           ============================================ */}
+        <section className="xp-section xp-segment" aria-labelledby="xp-summary-heading">
+          <div className="xp-section-inner">
+            <h2 className="h2" id="xp-summary-heading" style={{ margin: "0 0 12px" }}>Scenario Summary</h2>
+            <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading summary…</div>}>
+              <SummaryCounter />
+            </Suspense>
+          </div>
+        </section>
+
+        {/* ============================================
+            SECTION 6 — DECILE ANALYSIS
+           ============================================ */}
+        {decileRows && (
+          <section className="xp-section xp-segment" aria-labelledby="xp-decile-heading">
+            <div className="xp-section-inner">
+              <div className="section-header">
+                <h2 className="h2" id="xp-decile-heading" style={{ margin: 0 }}>Distributional Impact</h2>
+                <span className="badge-warning">Proxy estimate</span>
+              </div>
+              <Suspense fallback={<div className="card" style={{ padding: 16 }}>Loading distribution…</div>}>
+                <DecileImpact rows={decileRows} />
+              </Suspense>
+            </div>
+          </section>
         )}
 
-        {/* Interpretation guide - collapsible */}
-        <details className="help-panel">
-          <summary className="help-panel-trigger">
-            <span>💡</span>
-            <span>How to interpret results</span>
-          </summary>
-          <div className="help-panel-content">
-            <HelpExpander summary="Understanding the charts" defaultOpen>
-              <ul>
-                <li><strong>Price/Rent index:</strong> 100 = no change, 200 = doubled</li>
-                <li><strong>Stock vs demand:</strong> Gap = market tightness</li>
-                <li><strong>Trend colors:</strong> Green = improving, Red = worsening</li>
-              </ul>
-            </HelpExpander>
-            <HelpExpander summary="Common questions">
-              <ul>
-                <li><strong>Why do rents increase with NG removal?</strong> Short-term rental supply shock</li>
-                <li><strong>Why delayed ownership cap effects?</strong> Divestment over ramp period</li>
-              </ul>
-            </HelpExpander>
+        {/* ============================================
+            SECTION 9 — INTERPRETATION GUIDE
+           ============================================ */}
+        <section className="xp-section xp-segment">
+          <div className="xp-section-inner">
+            <details className="help-panel">
+              <summary className="help-panel-trigger">
+                <span>💡</span>
+                <span>How to interpret results</span>
+              </summary>
+              <div className="help-panel-content">
+                <HelpExpander summary="Understanding the charts" defaultOpen>
+                  <ul>
+                    <li><strong>Price and rent charts:</strong> Show median values in Australian dollars over time</li>
+                    <li><strong>Stock vs demand:</strong> Gap = market tightness</li>
+                    <li><strong>Trend colors:</strong> Green = improving, Red = worsening</li>
+                  </ul>
+                </HelpExpander>
+                <HelpExpander summary="Common questions">
+                  <ul>
+                    <li><strong>Why do rents increase with NG removal?</strong> Short-term rental supply shock</li>
+                    <li><strong>Why delayed ownership cap effects?</strong> Divestment over ramp period</li>
+                  </ul>
+                </HelpExpander>
+              </div>
+            </details>
           </div>
-        </details>
+        </section>
 
-        {/* Policy summary */}
-        <div className="card" style={{ padding: 16, marginTop: 14 }}>
-          <div className="h2" style={{ marginTop: 0 }}>Policy summary</div>
-          <div className="muted" style={{ fontSize: 13, marginBottom: 10 }}>
-            Summary of selected policies and their typical party associations. This is informational only and not an endorsement.
-          </div>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>Color key:</span>
-            {PARTY_ORDER.map((p) => (
-              <PartyChip key={`legend-${p}`} party={p} />
-            ))}
-          </div>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Active presets</div>
-              {activePresets.length === 0 ? (
-                <div className="muted" style={{ fontSize: 13 }}>Baseline only (no preset selected).</div>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
-                  {activePresets.map((p) => (
-                    <li key={p} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span>{p}</span>
-                      {(PRESET_PARTIES[p] ?? []).map((party) => (
-                        <PartyChip key={`${p}-${party}`} party={party} />
-                      ))}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Manual adjustments</div>
-              {manualChanges.length === 0 ? (
-                <div className="muted" style={{ fontSize: 13 }}>No manual policy changes from baseline.</div>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
-                  {manualChanges.map((c) => (
-                    <li key={c.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span>{c.label}: <strong>{c.value}</strong></span>
-                      {c.parties.map((party) => (
-                        <PartyChip key={`${c.key}-${party}`} party={party as any} />
-                      ))}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div style={{ paddingTop: 6, borderTop: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Most represented party in selected policies</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span>{partyKeyLabel}</span>
-                {partySummary.top.map((p) => (
-                  <PartyChip key={`top-${p}`} party={p} />
-                ))}
-              </div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                Based on the count of party associations across your selected policies (presets + manual adjustments).
-              </div>
-            </div>
-
-            <div style={{ paddingTop: 10, borderTop: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Feasibility & pushback assessment</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 13 }}>
-                  Difficulty: <strong>{policyDifficulty.rating}</strong>
-                </span>
-                <span className="muted" style={{ fontSize: 12 }}>
-                  (score {policyDifficulty.score}/100)
-                </span>
-              </div>
-              <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-                {policyDifficulty.summary}
-              </div>
-              {Object.values(policyDifficulty.factors).some((xs) => Array.isArray(xs) && xs.length > 0) && (
-                <div style={{ display: "grid", gap: 8, fontSize: 12 }}>
-                  {(
-                    [
-                      ["Federal", policyDifficulty.factors.federal, policyDifficulty.factors.severity.federal],
-                      ["State", policyDifficulty.factors.state, policyDifficulty.factors.severity.state],
-                      ["Industry", policyDifficulty.factors.industry, policyDifficulty.factors.severity.industry],
-                      ["Implementation", policyDifficulty.factors.implementation, policyDifficulty.factors.severity.implementation],
-                    ] as Array<[string, string[], "Low" | "Medium" | "High"]>
-                  ).map(([label, items, severity]) =>
-                    items.length ? (
-                      <details key={label} className="help-panel" style={{ padding: 10 }}>
-                        <summary className="help-panel-trigger" style={{ gap: 8 }}>
-                          <span>{label}</span>
-                          <span className="muted" style={{ fontSize: 11 }}>
-                            Severity: <strong>{severity}</strong>
-                          </span>
-                        </summary>
-                        <div className="help-panel-content">
-                          <ul style={{ margin: "8px 0 0 18px" }}>
-                            {items.map((f, i) => (
-                              <li key={`${label}-${i}`}>{f}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </details>
-                    ) : null
-                  )}
-                </div>
-              )}
-              <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>
-                Heuristic assessment only; actual feasibility depends on timing, coalitions, and implementation details.
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -1,5 +1,5 @@
-import { Suspense, lazy } from "react";
-import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { Suspense, lazy, useState, useCallback, useEffect, useRef } from "react";
+import { NavLink, Link, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { AssumptionsFooter } from "./components/AssumptionsFooter";
 import { ModelProvider, useModel } from "./model/ModelContext";
 
@@ -16,9 +16,92 @@ const Docs = lazy(() =>
   import("./routes/Docs").then((m) => ({ default: m.Docs }))
 );
 
+function MobileDrawer({
+  open,
+  onClose,
+  onReset,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onReset: () => void;
+}) {
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (open) onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (open && drawerRef.current) {
+      const firstLink = drawerRef.current.querySelector("a, button") as HTMLElement | null;
+      firstLink?.focus();
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="drawerBackdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        className="drawerPanel"
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        <div className="drawerHeader">
+          <h2 className="h3" style={{ margin: 0 }}>Menu</h2>
+          <button
+            type="button"
+            className="drawerClose"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+        <nav className="drawerNav" aria-label="Primary">
+          <NavLink to="/story">Guided Story</NavLink>
+          <NavLink to="/" end>Explore the Model</NavLink>
+          <NavLink to="/methodology">Methodology</NavLink>
+          <NavLink to="/docs">Docs</NavLink>
+          <button type="button" onClick={onReset}>
+            ↺ Reset to defaults
+          </button>
+        </nav>
+      </div>
+    </>
+  );
+}
+
 function Shell() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { resetToDefaults } = useModel();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const handleReset = useCallback(() => {
+    resetToDefaults();
+    navigate("/");
+    setDrawerOpen(false);
+  }, [resetToDefaults, navigate]);
 
   return (
     <div className="appShell">
@@ -32,7 +115,11 @@ function Shell() {
       </a>
       <header className="topBar">
         <div className="container topBarInner">
-          <div className="brand" aria-label="AIM-HR — Australian Independent Model for Housing Reform">
+          <Link
+            to="/"
+            className="brand"
+            aria-label="AIM-HR — Australian Independent Model for Housing Reform (go to Explore the Model)"
+          >
             <img
               src="/favicon.svg"
               alt=""
@@ -43,31 +130,52 @@ function Shell() {
             />
             <div>
               <div className="brandTitle">AIM-HR</div>
-              <div className="muted" style={{ fontSize: 12 }}>
+              <div className="muted" style={{ fontSize: 11 }}>
                 Australian Independent Model for Housing Reform
               </div>
             </div>
-          </div>
+          </Link>
 
+          {/* Desktop nav */}
           <nav className="nav" aria-label="Primary">
-            <NavLink to="/" end>
-              Guided Story
-            </NavLink>
-            <NavLink to="/explore">Explore the Model</NavLink>
+            <NavLink to="/story">Guided Story</NavLink>
+            <NavLink to="/" end>Explore the Model</NavLink>
             <NavLink to="/methodology">Methodology</NavLink>
             <NavLink to="/docs">Docs</NavLink>
             <button
               type="button"
-              onClick={() => {
-                resetToDefaults();
-                navigate("/explore");
-              }}
+              onClick={handleReset}
             >
               Reset
             </button>
           </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            className="hamburgerBtn"
+            onClick={() => setDrawerOpen((v) => !v)}
+            aria-label={drawerOpen ? "Close menu" : "Open menu"}
+            aria-expanded={drawerOpen}
+          >
+            <span className={`hamburgerIcon ${drawerOpen ? "open" : ""}`} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
         </div>
       </header>
+
+      <MobileDrawer open={drawerOpen} onClose={closeDrawer} onReset={handleReset} />
+
+      {location.pathname !== "/story" ? (
+        <div className="storyBanner">
+          <Link to="/story">
+            New here? Learn the theory behind the model first in the <strong>Guided Story</strong> →
+          </Link>
+        </div>
+      ) : null}
 
       <main id="main" className="main">
         <div className="container">
@@ -81,10 +189,10 @@ function Shell() {
                 })
               : "—"}
           </p>
-          <Suspense fallback={<div className="card">Loading…</div>}>
+          <Suspense fallback={<div className="card" style={{ padding: 20, textAlign: "center" }}>Loading…</div>}>
             <Routes>
-              <Route path="/" element={<GuidedStory />} />
-              <Route path="/explore" element={<ExploreModel />} />
+              <Route path="/" element={<ExploreModel />} />
+              <Route path="/story" element={<GuidedStory />} />
               <Route path="/methodology" element={<Methodology />} />
               <Route path="/docs" element={<Docs />} />
             </Routes>
@@ -104,5 +212,3 @@ export default function App() {
     </ModelProvider>
   );
 }
-
-
