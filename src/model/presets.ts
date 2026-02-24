@@ -1721,25 +1721,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
     years: 20,
   },
   {
-    id: "comprehensive",
-    name: "Comprehensive Reform",
-    description:
-      "Full reform: supply boost, negative gearing removal, ownership cap.",
-    policy: {
-      ...DEFAULT_POLICY_LEVERS,
-      supplyBoost: 0.15,
-      negativeGearingMode: "remove",
-      negativeGearingIntensity: 1,
-      ownershipCapEnabled: true,
-      ownershipCapEnforcement: 1,
-      excessInvestorStockShare: 0.18,
-      divestmentPhased: true,
-      stampDutyRateDelta: -0.01,
-      rampYears: 5,
-    },
-    years: 20,
-  },
-  {
     id: "land-tax-transition",
     name: "Land tax transition (stamp duty → land tax)",
     description: "Reduce transaction frictions by shifting away from stamp duty toward land tax (proxy).",
@@ -1826,56 +1807,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
       rampYears: 5,
     },
     years: 20,
-  },
-  {
-    id: "all-levers",
-    name: "All levers (comprehensive + expert)",
-    description:
-      "Stress test: activates multiple calibration-first levers alongside core reforms (bounded, shape-first).",
-    policy: {
-      ...DEFAULT_POLICY_LEVERS,
-      supplyBoost: 0.12,
-      negativeGearingMode: "remove",
-      negativeGearingIntensity: 1,
-      ownershipCapEnabled: true,
-      ownershipCapEnforcement: 1,
-      excessInvestorStockShare: 0.18,
-      divestmentPhased: true,
-      taxInvestor: {
-        ...DEFAULT_POLICY_LEVERS.taxInvestor,
-        cgtDiscountDelta: -0.10,
-        landTaxShift: 0.6,
-        vacancyTaxIntensity: 0.5,
-        shortStayRegulationIntensity: 0.6,
-        foreignBuyerRestrictionIntensity: 0.5,
-      },
-      credit: {
-        ...DEFAULT_POLICY_LEVERS.credit,
-        serviceabilityBufferDelta: 0.01,
-        dtiCapTightness: 0.5,
-        investorLendingLimitTightness: 0.4,
-      },
-      rental: {
-        ...DEFAULT_POLICY_LEVERS.rental,
-        rentAssistanceIntensity: 0.4,
-        rentRegulationCap: 0.04,
-        rentRegulationCoverage: 0.4,
-        vacancyDecontrol: true,
-      },
-      planning: {
-        ...DEFAULT_POLICY_LEVERS.planning,
-        upzoningIntensity: 0.6,
-        infrastructureEnablement: 0.6,
-        infrastructureLagYears: 3,
-      },
-      publicCommunity: {
-        ...DEFAULT_POLICY_LEVERS.publicCommunity,
-        publicHousingBuildBoost: 0.08,
-      },
-      migration: { ...DEFAULT_POLICY_LEVERS.migration, netOverseasMigrationShock: -0.05 },
-      rampYears: 5,
-    },
-    years: 25,
   },
 ];
 

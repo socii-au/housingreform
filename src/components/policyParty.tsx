@@ -41,7 +41,6 @@ export const PRESET_PARTIES: Record<string, PartyKey[]> = {
   "ownership-cap": ["greens"],
   "ownership-cap-aggressive": ["greens"],
   "supply-boost": ["labor"],
-  comprehensive: ["independent"],
   "land-tax-transition": ["coalition"],
   "macroprudential-tightening": ["bipartisan"],
   "short-stay-clampdown": ["greens"],
@@ -49,7 +48,6 @@ export const PRESET_PARTIES: Record<string, PartyKey[]> = {
   "migration-shock-down": ["coalition"],
   "immigration-cap": ["coalition"],
   "cgt-repeal": ["labor", "greens"],
-  "all-levers": ["independent"],
 };
 
 export const GROUP_PARTIES: Record<string, PartyKey[]> = {

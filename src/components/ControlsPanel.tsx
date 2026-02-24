@@ -136,6 +136,7 @@ export function ControlsPanel() {
   const calibrationEnabled =
     !!params.advanced?.calibration?.enabled && !!params.advanced?.calibration?.historyByCity;
   const [expertMode, setExpertMode] = useState(false);
+  const [showIndirectReforms, setShowIndirectReforms] = useState(false);
 
   const scopeValue =
     scope.level === "national"
@@ -289,18 +290,6 @@ export function ControlsPanel() {
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input
                   type="checkbox"
-                  checked={selectedPresets.includes("comprehensive")}
-                  onChange={() => togglePreset("comprehensive")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>📦 Comprehensive Reform</span>
-                {PRESET_PARTIES["comprehensive"]?.map((p) => (
-                  <PartyChip key={`comprehensive-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
                   checked={selectedPresets.includes("cgt-repeal")}
                   onChange={() => togglePreset("cgt-repeal")}
                   style={{ cursor: "pointer" }}
@@ -312,95 +301,104 @@ export function ControlsPanel() {
               </label>
             </div>
 
-            {/* Expert presets */}
+            {/* Indirect reforms (show/hide) */}
             <div style={{ marginTop: 4, paddingLeft: 20, borderLeft: "2px solid var(--border)" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                Expert Presets
-              </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("land-tax-transition")}
-                  onChange={() => togglePreset("land-tax-transition")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🧾 Land Tax Transition</span>
-                {PRESET_PARTIES["land-tax-transition"]?.map((p) => (
-                  <PartyChip key={`land-tax-transition-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("macroprudential-tightening")}
-                  onChange={() => togglePreset("macroprudential-tightening")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🏦 Macroprudential Tightening</span>
-                {PRESET_PARTIES["macroprudential-tightening"]?.map((p) => (
-                  <PartyChip key={`macroprudential-tightening-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("short-stay-clampdown")}
-                  onChange={() => togglePreset("short-stay-clampdown")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🛏️ Short-Stay Clampdown</span>
-                {PRESET_PARTIES["short-stay-clampdown"]?.map((p) => (
-                  <PartyChip key={`short-stay-clampdown-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("public-housing-build")}
-                  onChange={() => togglePreset("public-housing-build")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🏘️ Public Housing Build</span>
-                {PRESET_PARTIES["public-housing-build"]?.map((p) => (
-                  <PartyChip key={`public-housing-build-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("migration-shock-down")}
-                  onChange={() => togglePreset("migration-shock-down")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🧳 Migration Shock (Lower)</span>
-                {PRESET_PARTIES["migration-shock-down"]?.map((p) => (
-                  <PartyChip key={`migration-shock-down-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("immigration-cap")}
-                  onChange={() => togglePreset("immigration-cap")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🛂 Immigration Cap (200k/yr)</span>
-                {PRESET_PARTIES["immigration-cap"]?.map((p) => (
-                  <PartyChip key={`immigration-cap-${p}`} party={p} />
-                ))}
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPresets.includes("all-levers")}
-                  onChange={() => togglePreset("all-levers")}
-                  style={{ cursor: "pointer" }}
-                />
-                <span>🧪 All Levers (Stress Test)</span>
-                {PRESET_PARTIES["all-levers"]?.map((p) => (
-                  <PartyChip key={`all-levers-${p}`} party={p} />
-                ))}
-              </label>
+              <button
+                type="button"
+                onClick={() => setShowIndirectReforms((v) => !v)}
+                aria-expanded={showIndirectReforms}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {showIndirectReforms ? "▼" : "▶"} Indirect reforms
+              </button>
+              {showIndirectReforms && (
+                <div style={{ marginTop: 6 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("land-tax-transition")}
+                      onChange={() => togglePreset("land-tax-transition")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🧾 Land Tax Transition</span>
+                    {PRESET_PARTIES["land-tax-transition"]?.map((p) => (
+                      <PartyChip key={`land-tax-transition-${p}`} party={p} />
+                    ))}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("macroprudential-tightening")}
+                      onChange={() => togglePreset("macroprudential-tightening")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🏦 Macroprudential Tightening</span>
+                    {PRESET_PARTIES["macroprudential-tightening"]?.map((p) => (
+                      <PartyChip key={`macroprudential-tightening-${p}`} party={p} />
+                    ))}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("short-stay-clampdown")}
+                      onChange={() => togglePreset("short-stay-clampdown")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🛏️ Short-Stay Clampdown</span>
+                    {PRESET_PARTIES["short-stay-clampdown"]?.map((p) => (
+                      <PartyChip key={`short-stay-clampdown-${p}`} party={p} />
+                    ))}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("public-housing-build")}
+                      onChange={() => togglePreset("public-housing-build")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🏘️ Public Housing Build</span>
+                    {PRESET_PARTIES["public-housing-build"]?.map((p) => (
+                      <PartyChip key={`public-housing-build-${p}`} party={p} />
+                    ))}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("migration-shock-down")}
+                      onChange={() => togglePreset("migration-shock-down")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🧳 Migration Shock (Lower)</span>
+                    {PRESET_PARTIES["migration-shock-down"]?.map((p) => (
+                      <PartyChip key={`migration-shock-down-${p}`} party={p} />
+                    ))}
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPresets.includes("immigration-cap")}
+                      onChange={() => togglePreset("immigration-cap")}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>🛂 Immigration Cap (200k/yr)</span>
+                    {PRESET_PARTIES["immigration-cap"]?.map((p) => (
+                      <PartyChip key={`immigration-cap-${p}`} party={p} />
+                    ))}
+                  </label>
+                </div>
+              )}
             </div>
 
             {selectedPresets.length > 1 && (

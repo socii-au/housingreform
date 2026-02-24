@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { ControlsPanel } from "../components/ControlsPanel";
 import { useModel, scopeLabel } from "../model/ModelContext";
+import { CITIES, ALL_STATES, STATE_NAMES, cityMeta } from "../model/regions";
+import type { CityId, StateId } from "../model/regions";
 import { HelpExpander } from "../components/shared/HelpText";
 import { DEFAULT_POLICY_LEVERS_V2, POLICY_PARAMS, listAtBounds, listCalibrationFirstActive, toPolicyV2 } from "../model/policyRegistry";
 import { buildRegionTimeline } from "../model/history/timeline";
@@ -43,11 +45,11 @@ const SummaryCounter = lazy(() =>
    POLICY PRESETS — grouped for the hero dropdown
    ================================================================ */
 const REFORM_PRESETS = SCENARIO_PRESETS.filter((p) =>
-  ["ng-remove", "ng-remove-fast", "ng-restore", "ownership-cap", "ownership-cap-aggressive", "supply-boost", "comprehensive", "cgt-repeal"].includes(p.id)
+  ["ng-remove", "ng-remove-fast", "ng-restore", "ownership-cap", "ownership-cap-aggressive", "supply-boost", "cgt-repeal"].includes(p.id)
 );
 
 const EXPERT_PRESETS = SCENARIO_PRESETS.filter((p) =>
-  ["land-tax-transition", "macroprudential-tightening", "short-stay-clampdown", "public-housing-build", "migration-shock-down", "immigration-cap", "all-levers"].includes(p.id)
+  ["land-tax-transition", "macroprudential-tightening", "short-stay-clampdown", "public-housing-build", "migration-shock-down", "immigration-cap"].includes(p.id)
 );
 
 /* ================================================================
@@ -207,6 +209,9 @@ export function ExploreModel() {
     setFocusYear,
     selectedPresets,
     togglePreset,
+    selectNational,
+    selectState,
+    selectCity,
   } = useModel();
 
   const { years } = scopedView;
@@ -214,6 +219,7 @@ export function ExploreModel() {
 
   /* Bottom sheet state for advanced controls */
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showIndirectReforms, setShowIndirectReforms] = useState(false);
   const closeSheet = useCallback(() => setSheetOpen(false), []);
 
   useEffect(() => {
@@ -373,27 +379,69 @@ export function ExploreModel() {
                 </div>
               </div>
 
-              {/* Expert presets */}
+              {/* Indirect reforms (show/hide) */}
               <div style={{ flex: "1 1 100%" }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b", marginBottom: 8, marginTop: 10 }}>
-                  Expert / Advanced
-                </div>
-                <div className="xp-hero-pills">
-                  {EXPERT_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={`xp-policy-pill ${selectedPresets.includes(preset.id) ? "active" : ""}`}
-                      onClick={() => togglePreset(preset.id)}
-                      aria-pressed={selectedPresets.includes(preset.id)}
-                    >
-                      <span className="pill-check" aria-hidden="true">
-                        {selectedPresets.includes(preset.id) ? "✓" : ""}
+                {showIndirectReforms ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 10 }}>
+                      <span style={{ fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#64748b" }}>
+                        Indirect reforms
                       </span>
-                      {preset.name}
-                    </button>
-                  ))}
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowIndirectReforms(false)}
+                        aria-label="Hide indirect reforms"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          fontSize: 12,
+                          color: "#64748b",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Hide
+                      </button>
+                    </div>
+                    <div className="xp-hero-pills">
+                      {EXPERT_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          className={`xp-policy-pill ${selectedPresets.includes(preset.id) ? "active" : ""}`}
+                          onClick={() => togglePreset(preset.id)}
+                          aria-pressed={selectedPresets.includes(preset.id)}
+                        >
+                          <span className="pill-check" aria-hidden="true">
+                            {selectedPresets.includes(preset.id) ? "✓" : ""}
+                          </span>
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowIndirectReforms(true)}
+                    aria-expanded="false"
+                    style={{
+                      marginTop: 10,
+                      padding: "8px 12px",
+                      background: "rgba(100, 116, 139, 0.1)",
+                      border: "1px solid rgba(100, 116, 139, 0.3)",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#64748b",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
+                    Show indirect reforms
+                  </button>
+                )}
               </div>
 
               {/* Actions row */}
@@ -417,19 +465,201 @@ export function ExploreModel() {
               </div>
             </div>
 
-            {/* Scope row */}
+            {/* Scope row: current view badge + Select State + Select City */}
             <div className="xp-scope-row">
               <div className="scope-badge">
                 <span>{scope.level === "national" ? "🇦🇺" : scope.level === "state" ? "📍" : "🏙️"}</span>
                 <span>{scopeLabel(scope)}</span>
                 {scope.level === "national" && <span style={{ opacity: 0.7 }}>({params.cities.length} cities)</span>}
               </div>
+              <label className="xp-scope-select-wrap" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b", whiteSpace: "nowrap" }}>Select State</span>
+                <select
+                  aria-label="Select State"
+                  value={scope.level === "national" ? "NATIONAL" : scope.level === "state" ? scope.state : cityMeta(scope.city).state}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "NATIONAL") selectNational();
+                    else selectState(v as StateId);
+                  }}
+                  className="xp-scope-select"
+                >
+                  <option value="NATIONAL">National</option>
+                  {ALL_STATES.map((st) => (
+                    <option key={st} value={st}>{STATE_NAMES[st]}</option>
+                  ))}
+                </select>
+              </label>
+              {(scope.level === "state" || scope.level === "city") && (() => {
+                const currentState: StateId = scope.level === "state" ? scope.state : cityMeta(scope.city).state;
+                const citiesInState = params.cities
+                  .filter((c) => cityMeta(c.cityId).state === currentState)
+                  .map((c) => ({ id: c.cityId, name: cityMeta(c.cityId).name }))
+                  .sort((a, b) => a.name.localeCompare(b.name));
+                return (
+                  <label className="xp-scope-select-wrap" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b", whiteSpace: "nowrap" }}>Select City</span>
+                    <select
+                      aria-label="Select City"
+                      value={scope.level === "city" ? scope.city : ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v) selectCity(v as CityId);
+                      }}
+                      className="xp-scope-select"
+                    >
+                      <option value="">Select city</option>
+                      {citiesInState.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })()}
+              <label className="xp-scope-select-wrap" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b", whiteSpace: "nowrap" }}>Jump to year:</span>
+                <select
+                  id="xp-year-select"
+                  aria-label="Jump to year"
+                  value={selectedYear}
+                  onChange={(e) => setFocusYear(Number(e.target.value))}
+                  className="xp-scope-select"
+                  style={{ minWidth: 80 }}
+                >
+                  {(chartSeries as any).map((p: any) => (
+                    <option key={`yr-${p.year}`} value={p.year}>{p.year}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => setFocusYear(null)}
+                style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid rgba(125, 211, 252, 0.25)", background: "rgba(255, 255, 255, 0.08)", color: "#7dd3fc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+              >
+                Latest
+              </button>
               <span style={{ fontSize: 12, color: "#64748b" }}>
                 This model is a free tool by the not-for-profit research team at SOCii. Results update instantly.
               </span>
             </div>
           </div>
         </section>
+
+        {/* ============================================
+            AFFORDABILITY TABLE — updates with policy & year
+           ============================================ */}
+        {(() => {
+          const byCity = outputs?.byCity ?? {};
+          const capitalIds = CITIES.filter((c) => c.isCapital).map((c) => c.id);
+          const includedCapitals = capitalIds.filter((id) => params.cities.some((c) => c.cityId === id));
+          const year0 = first?.year ?? 0;
+          const findYearState = (cityId: CityId, year: number) => {
+            const city = byCity[cityId];
+            if (!city?.years?.length) return null;
+            const exact = city.years.find((y: any) => y.year === year);
+            if (exact) return exact;
+            const sorted = [...city.years].sort((a: any, b: any) => a.year - b.year);
+            let prev = sorted[0];
+            for (const y of sorted) {
+              if (y.year >= year) return y.year - year <= year - prev.year ? y : prev;
+              prev = y;
+            }
+            return prev;
+          };
+          const fmtAUDTable = (n: number) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(n);
+          const fmtAUDK = (n: number) => n >= 1e6 ? fmtAUDTable(n) : new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(Math.round(n / 1000) * 1000);
+          const dirColor = (current: number, baseline: number) => {
+            if (baseline === 0 || current === baseline) return undefined;
+            return current > baseline ? "#dc2626" : "#16a34a";
+          };
+          /* Table uses 10% deposit (90% LVR), 30-year term. Model's typicalMortgagePayment is for 80% LVR; scale to 90% for display. */
+          const depositShare = 0.10;
+          const lvrTable = 1 - depositShare; /* 0.90 */
+          const lvrModel = 0.80;
+          const repayScale = lvrTable / lvrModel; /* 1.125 */
+          const postTaxShare = 0.30;
+          const effectiveTaxRate = 0.28;
+
+          const rows = includedCapitals.map((cityId) => {
+            const base = findYearState(cityId, year0);
+            const current = findYearState(cityId, selectedYear);
+            const name = CITIES.find((c) => c.id === cityId)?.name ?? cityId;
+            const price = current?.medianPrice ?? 0;
+            const priceBase = base?.medianPrice ?? price;
+            const deposit = price * depositShare;
+            const depositBase = priceBase * depositShare;
+            const loan = price * lvrTable;
+            const loanBase = priceBase * lvrTable;
+            const annualRepayModel = (current as any)?.affordability?.typicalMortgagePayment ?? 0;
+            const annualRepayModelBase = (base as any)?.affordability?.typicalMortgagePayment ?? annualRepayModel;
+            const annualRepay = annualRepayModel * repayScale;
+            const annualRepayBase = annualRepayModelBase * repayScale;
+            const postTaxAnnual = (annualRepay / postTaxShare) || 0;
+            const postTaxAnnualBase = (annualRepayBase / postTaxShare) || 0;
+            const incomeReq = postTaxAnnual > 0 ? postTaxAnnual / (1 - effectiveTaxRate) : 0;
+            const incomeReqBase = postTaxAnnualBase > 0 ? postTaxAnnualBase / (1 - effectiveTaxRate) : 0;
+            const monthlyRepay = annualRepay / 12;
+            const monthlyRepayBase = annualRepayBase / 12;
+            return {
+              name,
+              cityId,
+              medianPrice: price,
+              medianPriceBase: priceBase,
+              deposit,
+              depositBase,
+              loan,
+              loanBase,
+              monthlyRepay,
+              monthlyRepayBase,
+              incomeReq,
+              incomeReqBase,
+            };
+          }).filter((r) => r.medianPrice > 0 || r.medianPriceBase > 0);
+
+          if (rows.length === 0) return null;
+
+          return (
+            <section className="xp-section" style={{ background: "var(--surface-alt)" }} aria-labelledby="affordability-table-heading">
+              <div className="xp-section-inner">
+                <h2 id="affordability-table-heading" className="h2" style={{ marginBottom: 8 }}>
+                  Annual income needed to afford a property in each capital city
+                </h2>
+                <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
+                  Before-tax income required so that monthly mortgage repayments (90% LVR at the simulated rate) equal 30% of post-tax income. Year {selectedYear}. Values are colour-coded vs start of simulation (year {year0}) — green = lower than baseline, red = higher.
+                </p>
+                <div className="card" style={{ padding: 0, overflow: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#15803d", color: "white" }}>
+                        <th style={{ textAlign: "left", padding: "10px 12px", fontWeight: 700 }}>Capital city</th>
+                        <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 700 }}>Median property value</th>
+                        <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 700 }}>Deposit (10%)</th>
+                        <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 700 }}>Loan amount</th>
+                        <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 700 }}>Monthly repayment</th>
+                        <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 700 }}>Income required, individual</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr key={r.cityId} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                          <td style={{ padding: "10px 12px", fontWeight: 600 }}>{r.name}</td>
+                          <td style={{ textAlign: "right", padding: "10px 12px", color: dirColor(r.medianPrice, r.medianPriceBase) }}>{fmtAUDK(r.medianPrice)}</td>
+                          <td style={{ textAlign: "right", padding: "10px 12px", color: dirColor(r.deposit, r.depositBase) }}>{fmtAUDK(r.deposit)}</td>
+                          <td style={{ textAlign: "right", padding: "10px 12px", color: dirColor(r.loan, r.loanBase) }}>{fmtAUDK(r.loan)}</td>
+                          <td style={{ textAlign: "right", padding: "10px 12px", color: dirColor(r.monthlyRepay, r.monthlyRepayBase) }}>{fmtAUDTable(r.monthlyRepay)}</td>
+                          <td style={{ textAlign: "right", padding: "10px 12px", fontWeight: 600, color: dirColor(r.incomeReq, r.incomeReqBase) }}>{r.incomeReq >= 1000 ? fmtAUDK(r.incomeReq) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="muted" style={{ fontSize: 11, marginTop: 12, marginBottom: 0, lineHeight: 1.5, maxWidth: "72ch" }}>
+                  <strong>Assumptions:</strong> Deposit 10% of property value (90% loan-to-value ratio). Mortgage term 30 years. Interest rate is the simulated mortgage rate for that city and year from the model. &quot;Income required, individual&quot; is the before-tax annual income such that monthly mortgage repayments equal 30% of post-tax income (approximate Australian tax applied to convert to gross income). Lenders mortgage insurance and other fees not included. This table is illustrative only and does not constitute lending or financial advice.
+                </p>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ============================================
             SECTION 2 — MAP + KEY METRICS
@@ -497,26 +727,6 @@ export function ExploreModel() {
                 <path d="M12 16v-4m0-4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               Hover or tap a year on either chart to see that year highlighted on the map above.
-            </div>
-
-            <div className="xp-year-scrubber">
-              <label htmlFor="xp-year-select">Jump to year:</label>
-              <select
-                id="xp-year-select"
-                value={selectedYear}
-                onChange={(e) => setFocusYear(Number(e.target.value))}
-              >
-                {(chartSeries as any).map((p: any) => (
-                  <option key={`yr-${p.year}`} value={p.year}>{p.year}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, fontWeight: 600, minHeight: 38 }}
-                onClick={() => setFocusYear(null)}
-              >
-                Latest
-              </button>
             </div>
 
             <div className="chart-grid-primary">

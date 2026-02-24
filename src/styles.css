@@ -1218,6 +1218,29 @@ button.primary:active {
   color: #7dd3fc;
 }
 
+.xp-scope-select-wrap {
+  cursor: pointer;
+}
+
+.xp-scope-select {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #7dd3fc;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.xp-scope-select:hover,
+.xp-scope-select:focus {
+  border-color: rgba(125, 211, 252, 0.5);
+  outline: none;
+}
+
 /* ---- MAP section ---- */
 .xp-map-section {
   background: var(--surface);

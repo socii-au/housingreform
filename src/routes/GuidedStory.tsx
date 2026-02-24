@@ -467,20 +467,6 @@ export function GuidedStory() {
                 "May face NIMBY resistance",
               ]}
             />
-            <PolicyCard
-              title="📦 Comprehensive reform"
-              description="Combine supply boost + NG removal + ownership cap for maximum effect"
-              effects={[
-                "Attacks problem from multiple angles",
-                "Supply + demand effects compound",
-                "Larger overall impact on affordability",
-              ]}
-              tradeoffs={[
-                "More politically difficult",
-                "Harder to attribute effects",
-                "Higher implementation complexity",
-              ]}
-            />
           </div>
         </div>
 

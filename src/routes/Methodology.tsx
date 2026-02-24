@@ -50,7 +50,7 @@ export function Methodology() {
         </button>
       </div>
 
-      <div className="card" style={{ padding: 16 }}>
+      <div className="card docs-content" style={{ padding: 16 }}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           skipHtml
